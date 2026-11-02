@@ -4,7 +4,9 @@ A macOS VST3 synthesizer instrument for Akai MPC desktop. Supports native Apple 
 
 ![BASSBOXX interface](docs/BASSBOXX-interface.png)
 
-[Plugin downloads](https://github.com/prohoezak-hue/bassboxx/releases) · [Automatic build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Audio demo](examples/BASSBOXX-demo.wav) · [Validation details](VALIDATION.md)
+**[Download BASSBOXX for Mac — ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-00805dd4f48d/BASSBOXX-macOS-VST3.zip)**
+
+Verified universal build 1.0.1. [All releases](https://github.com/prohoezak-hue/bassboxx/releases) · [Automatic build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Audio demo](examples/BASSBOXX-demo.wav) · [Validation details](VALIDATION.md)
 
 ## Download and install — no programming required
 
