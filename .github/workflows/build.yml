@@ -1,26 +1,92 @@
-name: Build and test
-on: [push, pull_request, workflow_dispatch]
+name: Build BASSBOXX macOS VST3
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**", "examples/**"]
+  pull_request:
+    paths-ignore: ["**.md", "docs/**", "examples/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: bassboxx-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   mac:
+    name: Universal macOS VST3, tests and ZIP
     runs-on: macos-14
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Configure universal macOS plugin
+      - name: Configure Apple Silicon and Intel VST3 only
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
-      - name: Build
+      - name: Build plugin and test executables
         run: cmake --build build --config Release --parallel 3
-      - name: Test
-        run: ctest --test-dir build -C Release --output-on-failure
-      - name: Package
-        run: ditto -c -k --sequesterRsrc --keepParent build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3 BASSBOXX-macOS-VST3.zip
+      - name: Run all tests and render the editor
+        run: |
+          ctest --test-dir build -C Release --output-on-failure
+          build/plugin_tests "$RUNNER_TEMP/BASSBOXX-interface.png"
+      - name: Verify, sign, test installer, and package ZIP
+        run: bash scripts/package-macos.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: BASSBOXX-macOS
-          path: BASSBOXX-macOS-VST3.zip
+          name: BASSBOXX-macOS-VST3
+          path: |
+            dist/BASSBOXX-macOS-VST3.zip
+            dist/BASSBOXX-macOS-VST3.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BASSBOXX-macOS-test-evidence
+          path: |
+            build/Testing/Temporary/LastTest.log
+            ${{ runner.temp }}/BASSBOXX-interface.png
+          if-no-files-found: error
   engine:
+    name: Portable DSP regression tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: cmake -S . -B build -DBASSBOXX_ENGINE_ONLY=ON
+      - run: cmake -S . -B build -DBASSBOXX_ENGINE_ONLY=ON -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build build --parallel 2
       - run: ctest --test-dir build --output-on-failure
+  publish:
+    name: Publish downloadable plugin
+    needs: [mac, engine]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: BASSBOXX-macOS-VST3
+          path: dist
+      - name: Publish tested ZIP as a versioned development release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="macos-${BUILD_SHA:0:12}"
+          cat > release-notes.md <<EOF_NOTES
+          BASSBOXX by ProHoeZak — macOS VST3 instrument only.
+
+          Download **BASSBOXX-macOS-VST3.zip**, extract it and double-click **Install BASSBOXX.command**. No JUCE or Xcode installation is required.
+
+          Apple Silicon (arm64/M-series) and Intel (x86_64), macOS 11+. Both offline test suites, architecture/signature verification, installer installation/upgrade, and ZIP extraction verification passed before this release job ran.
+
+          This is an ad-hoc signed development build, not Developer ID signed/notarized. macOS security policy may block it. MPC host scanning, playback, automation and project recall still require testing in MPC desktop with VST3 support.
+
+          Source commit: ${BUILD_SHA}
+          EOF_NOTES
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BASSBOXX-macOS-VST3.zip dist/BASSBOXX-macOS-VST3.zip.sha256 --clobber
+          else
+            gh release create "$tag" dist/BASSBOXX-macOS-VST3.zip dist/BASSBOXX-macOS-VST3.zip.sha256 --target "$BUILD_SHA" --title "BASSBOXX macOS ${BUILD_SHA:0:7}" --prerelease --notes-file release-notes.md
+          fi
+          echo "Download: https://github.com/${GH_REPO}/releases/download/${tag}/BASSBOXX-macOS-VST3.zip" >> "$GITHUB_STEP_SUMMARY"

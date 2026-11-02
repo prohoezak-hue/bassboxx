@@ -1,27 +1,29 @@
 # BASSBOXX by ProHoeZak
 
-A playable C++17/JUCE virtual analog instrument, built as a macOS VST3 and standalone application. This initial implementation follows the specifications in the project request; no separate original specification document was supplied.
+A macOS VST3 synthesizer instrument for Akai MPC desktop. Supports native Apple Silicon (M-series/arm64) and Intel Macs, macOS 11 or newer. The only instrument product is `BASSBOXX.vst3`; no standalone application is built or packaged.
 
 ![BASSBOXX interface](docs/BASSBOXX-interface.png)
 
-[Listen to the engine demo](examples/BASSBOXX-demo.wav) · [Validation details](VALIDATION.md)
+[Plugin downloads](https://github.com/prohoezak-hue/bassboxx/releases) · [Automatic build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Audio demo](examples/BASSBOXX-demo.wav) · [Validation details](VALIDATION.md)
 
-## Play it on your Mac
+## Download and install — no programming required
 
-The simplest route is to open the repository's **Actions → Build and test** after the first push. When the macOS job succeeds, download **BASSBOXX-macOS**, unzip the artifact and its contained plugin ZIP, and copy **BASSBOXX.vst3** to `~/Library/Audio/Plug-Ins/VST3/` (Finder → Go → Go to Folder). These are development builds, not Developer ID signed/notarized releases. A Mac may require local ad-hoc signing: `codesign --force --deep --sign - "$HOME/Library/Audio/Plug-Ins/VST3/BASSBOXX.vst3"`. Don't disable macOS security globally. If organizational policy blocks development plugins, use an approved signed build.
+1. Open **Plugin downloads** above and choose the newest completed **BASSBOXX macOS** release. Download **BASSBOXX-macOS-VST3.zip** under **Assets**, rather than the source-code archive. A release appears only after the Mac build, tests and packaging checks pass. GitHub sign-in may be required for a private repository. If there is no release yet, inspect **Automatic build status**; a failed or pending build does not provide a finished plugin.
+2. Quit MPC desktop and extract the entire ZIP.
+3. Double-click **Install BASSBOXX.command** in the extracted folder. It installs the precompiled plugin into your user VST3 folder and keeps an older installation as a backup. No JUCE, Xcode, administrator password or code editing is needed. If Finder asks, right-click → Open, if your Mac's security policy permits it.
+4. Restart MPC desktop and rescan the user VST3 folder in its plugin preferences/manager:
+   `~/Library/Audio/Plug-Ins/VST3/`
+5. Create a plugin program/track, choose **BASSBOXX**, enable monitoring and route your MIDI controller/pads to the track. Select an audio device and begin at 44.1 or 48 kHz, 256 samples. You can also click the three-octave keyboard. Start with low monitor volume.
 
-To build locally, install Apple's Command Line Tools (`xcode-select --install`) and CMake (`brew install cmake` if you use Homebrew), download/clone this repository, then double-click **scripts/build-mac.command** or run `bash scripts/build-mac.command` in Terminal. It builds Apple Silicon + Intel, runs the tests, installs to your user VST3 folder and ad-hoc signs the plugin. The first build downloads pinned JUCE 8.0.6 and requires Internet access. Minimum target macOS 11. Compilation and installation errors stop the script. The standalone app is in `build-mac/BASSBOXX_artefacts/Release/Standalone/`.
+For manual installation, copy **BASSBOXX.vst3** into the same folder using Finder → Go → Go to Folder. Create the folder if needed. The ZIP includes detailed installation instructions, build/source information and a signature-verified universal plugin. Each release also supplies a SHA-256 checksum file.
 
-### Akai MPC desktop
+### Compatibility and remaining Mac testing
 
-1. Use an MPC desktop version that supports third-party **VST3 instrument plugins** on macOS. VST2-only versions cannot load this build; update MPC if necessary. This project does not produce VST2.
-2. Restart MPC after installation. In its plugin preferences/manager enable and scan the user VST3 directory above. Names and menus vary by MPC version.
-3. Create a plugin program/track, choose **BASSBOXX**, route your MIDI controller or MPC pads to it, and enable track monitoring. Choose an audio device and begin at 44.1 or 48 kHz, 256 samples.
-4. Play notes or click the three-octave keyboard (C3–B5 in scientific pitch notation, MIDI 48–83; host octave labels may differ). Check both audio channels. Start with low monitor volume; Bass Boost adds substantial low-frequency energy.
-5. Select factory patches, automate cutoff/boost, save an MPC project, close and reopen it, and verify patch recall. Test sustain CC64, pitch bend (±2 semitones), polyphony and Panic. Export/bounce a short MIDI pattern and compare it to live playback.
-6. Test the same plugin architecture as your host. The universal binary supports native Apple Silicon and Intel/Rosetta. MPC hardware standalone mode cannot load arbitrary desktop VST3 plugins.
+Use an MPC desktop version supporting third-party **VST3 instruments**. VST2-only MPC versions cannot load this plugin. MPC menu names vary by version. MPC hardware standalone mode cannot load desktop VST3 plugins.
 
-Actual macOS compilation, plugin scanning, UI inspection, MIDI hardware, real-time latency, CPU behavior, project recall in MPC, and listening tests require a Mac and MPC. Linux tests do not certify MPC compatibility.
+The plugin is ad-hoc signed automatically in CI. It is not Apple Developer ID signed/notarized; macOS or managed security policy may block downloaded development plugins. If blocked, a Developer ID signed/notarized build is required for that policy. Do not disable system security protections. Developer ID signing requires the owner's Apple credentials, which are not supplied here.
+
+After installation, verify MPC scanning and live playback, switch factory presets, automate cutoff/Bass Boost, and save/reopen an MPC project to check parameter recall. Test pitch bend (±2 semitones), sustain CC64, polyphony, Panic and an exported MIDI-pattern bounce. These host-specific and listening checks need MPC on a Mac. Offline CI tests are not MPC certification. Download availability and the last observed validation results are recorded in **VALIDATION.md**.
 
 ## Instrument
 
@@ -34,26 +36,14 @@ Actual macOS compilation, plugin scanning, UI inspection, MIDI hardware, real-ti
 - Host automation for all synthesis parameters; host state stores parameter values and factory program index. Save/load custom `.bassboxx` files using the editor buttons. Factory programs remain immutable. Imported custom patches retain their saved program index but the parameter state is authoritative.
 - Metallic red procedural panel, wood-grain side cheeks, black rotary knobs and ProHoeZak branding. No external image assets are required.
 
-## Development
+## Automated builds and development
 
-```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel 2
-ctest --test-dir build --output-on-failure
-```
+GitHub Actions runs on pushes to `main`, pull requests and manual workflow dispatch. It builds a universal `arm64;x86_64` macOS VST3, runs engine/processor/editor tests, verifies both binary slices, ad-hoc signs and verifies the bundle, tests installer installation and upgrade, then extracts and verifies the ZIP again. Linux runs the portable DSP regression suite. Both jobs must pass before the publication job creates a versioned development release with the ZIP and checksum. It uses GitHub's built-in workflow token, with write permission scoped to publication; no personal token is needed on the runner.
 
-Optional `-DJUCE_SOURCE_DIR=/absolute/path/to/JUCE` uses an existing JUCE 8.0.6 checkout. JUCE is pinned to commit `51a8a6d7aeae7326956d747737ccf1575e61e209` otherwise. Linux plugin builds need ALSA, X11/Xext/Xinerama/Xrandr/Xcursor, FreeType/fontconfig and OpenGL development packages (standard Debian packages `libasound2-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxcursor-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev`). No audio hardware or display is needed for the automated tests.
+For maintainers, the build commands are in `.github/workflows/build.yml`; packaging is in `scripts/package-macos.sh`. CMake fetches pinned JUCE 8.0.6 (commit `51a8a6d7aeae7326956d747737ccf1575e61e209`) automatically. `-DJUCE_SOURCE_DIR=/path/to/JUCE` optionally reuses that dependency. On non-macOS platforms CMake builds the shared processor code and test utilities only, without a plugin or standalone target. `-DBASSBOXX_ENGINE_ONLY=ON` builds portable engine tests without JUCE. Neither test utilities nor the audio-demo renderer are shipped as instrument applications.
 
-Portable engine-only tests need just CMake and a C++17 compiler:
-
-```sh
-cmake -S . -B build-engine -DBASSBOXX_ENGINE_ONLY=ON
-cmake --build build-engine
-ctest --test-dir build-engine --output-on-failure
-```
-
-`Source/Engine.h` contains portable DSP; `Plugin.cpp` handles JUCE MIDI/automation/state; `Editor.h` implements controls and patch files. Engine tests check audio, release, pedal, voice stealing, bounds, Bass Boost, and all 100 presets at three rates. Processor tests exercise actual JUCE MIDI sample timing, audio output, programs and state roundtrips. CI also builds the universal macOS VST3/standalone. See `VALIDATION.md` for the observed cloud results.
+`Source/Engine.h` implements portable DSP, `Plugin.cpp` handles JUCE MIDI/automation/state, and `Editor.h` implements the controls and custom patch files. The existing engine, 100 presets and vintage interface remain unchanged in the VST3-only packaging update.
 
 ## Distribution and licensing
 
-Project copyright remains with its owner; no public redistribution license for original source is granted here. JUCE is a separate dependency available under AGPLv3 or commercial terms. Before distributing a plugin or source, choose and comply with the appropriate JUCE license (https://juce.com/legal/juce-8-licence/) and its bundled third-party notices. Merely compiling or linking does not establish a commercial license. Public macOS distribution also needs your Apple Developer signing/notarization workflow; no signing credentials are included.
+Project copyright remains with its owner; no public redistribution license for original source is granted here. JUCE is a separate dependency available under AGPLv3 or commercial terms. Before distributing to others, choose and comply with the appropriate [JUCE license](https://juce.com/legal/juce-8-licence/) and bundled notices. Merely compiling or linking does not establish a commercial license. No Apple signing credentials or commercial JUCE license are included.

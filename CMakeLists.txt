@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(BASSBOXX VERSION 1.0.0 LANGUAGES C CXX)
+project(BASSBOXX VERSION 1.0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CTest)
@@ -17,16 +17,27 @@ if(JUCE_SOURCE_DIR)
  add_subdirectory("${JUCE_SOURCE_DIR}" JUCE)
 else()
  include(FetchContent)
- FetchContent_Declare(JUCE GIT_REPOSITORY https://github.com/juce-framework/JUCE.git GIT_TAG 51a8a6d7aeae7326956d747737ccf1575e61e209 GIT_SHALLOW FALSE)
+ FetchContent_Declare(JUCE
+  URL https://codeload.github.com/juce-framework/JUCE/tar.gz/51a8a6d7aeae7326956d747737ccf1575e61e209
+  URL_HASH SHA256=20b740351cc030086951d87614bc08b42d072f1e4db68db1ef1d988e66dbbdbe)
  FetchContent_MakeAvailable(JUCE)
+endif()
+set(BASSBOXX_FORMATS)
+if(APPLE)
+ set(BASSBOXX_FORMATS VST3)
+else()
+ message(STATUS "Non-macOS: shared-code tests only; no instrument binary is produced")
 endif()
 juce_add_plugin(BASSBOXX
  COMPANY_NAME "ProHoeZak" BUNDLE_ID "com.prohoezak.bassboxx"
  PLUGIN_MANUFACTURER_CODE PhZk PLUGIN_CODE BsBx
- FORMATS VST3 Standalone PRODUCT_NAME "BASSBOXX"
+ FORMATS ${BASSBOXX_FORMATS} PRODUCT_NAME "BASSBOXX"
  IS_SYNTH TRUE NEEDS_MIDI_INPUT TRUE NEEDS_MIDI_OUTPUT FALSE
  IS_MIDI_EFFECT FALSE EDITOR_WANTS_KEYBOARD_FOCUS FALSE
  COPY_PLUGIN_AFTER_BUILD FALSE VST3_CATEGORIES Instrument Synth)
+if(TARGET BASSBOXX_Standalone)
+ message(FATAL_ERROR "BASSBOXX must never build a standalone instrument")
+endif()
 juce_generate_juce_header(BASSBOXX)
 target_sources(BASSBOXX PRIVATE Source/Plugin.cpp Source/Plugin.h Source/Editor.h Source/Engine.h)
 target_compile_definitions(BASSBOXX PUBLIC JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0)

@@ -1,0 +1,36 @@
+BASSBOXX by ProHoeZak — macOS VST3 instrument
+
+Requires macOS 11 or newer and an MPC desktop version supporting VST3 instruments.
+Supports native Apple Silicon (M-series) and Intel Macs. No standalone app.
+
+INSTALL
+1. Quit MPC desktop.
+2. Extract the entire BASSBOXX-macOS-VST3.zip download.
+3. Double-click "Install BASSBOXX.command" in the extracted folder.
+   The installer copies the already compiled plugin to your user VST3 folder.
+   No JUCE, Xcode, administrator password or programming is needed.
+   If Finder requires permission to open the installer, right-click it and choose
+   Open, if your Mac's security policy permits this trusted local installation.
+4. Restart MPC desktop. In plugin preferences/manager, enable and scan:
+   ~/Library/Audio/Plug-Ins/VST3/
+5. On a plugin program/track choose BASSBOXX, enable monitoring, and play your MIDI
+   controller/pads or click the on-screen keyboard. Start with low monitor volume.
+
+MANUAL INSTALL (if you prefer Finder)
+Copy BASSBOXX.vst3 to ~/Library/Audio/Plug-Ins/VST3/ using Finder > Go > Go to Folder.
+Create the VST3 folder if it does not exist. Replace an older BASSBOXX.vst3 if asked.
+
+TROUBLESHOOTING
+- The plugin has an ad-hoc signature. It is not Apple Developer ID signed or
+  notarized. macOS or managed security policy may block downloaded development
+  plugins. If blocked, a properly Developer ID signed/notarized build is needed;
+  do not disable Gatekeeper or other system security protections.
+- VST2-only MPC versions cannot load a VST3. Menu names vary by MPC version.
+- This is for MPC desktop on macOS; MPC hardware standalone mode cannot load it.
+- If silent, check audio-device settings, MIDI track routing and monitoring.
+- MPC host scanning, real-time playback and project recall need testing in MPC;
+  automated offline tests do not establish host compatibility or sound quality.
+
+Presets: choose any of 100 factory patches in the menu. Save/load custom patches
+using the editor buttons. Your MPC project also stores the parameter state.
+Existing synth features and the vintage interface are preserved.
