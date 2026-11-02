@@ -46,3 +46,13 @@ add_executable(plugin_tests tests/PluginTests.cpp)
 target_link_libraries(plugin_tests PRIVATE BASSBOXX juce::juce_audio_utils)
 target_include_directories(plugin_tests PRIVATE Source "${CMAKE_CURRENT_BINARY_DIR}/BASSBOXX_artefacts/JuceLibraryCode")
 add_test(NAME plugin COMMAND plugin_tests)
+
+# Exercise the compiled VST3 through JUCE's actual host wrapper, rather than
+# testing only the in-process AudioProcessor C++ implementation.
+if(APPLE)
+ add_executable(vst3_host_smoke tests/VST3HostSmoke.cpp)
+ target_compile_definitions(vst3_host_smoke PRIVATE JUCE_PLUGINHOST_VST3=1 JUCE_PLUGINHOST_AU=0 JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+ target_link_libraries(vst3_host_smoke PRIVATE juce::juce_audio_utils juce::juce_recommended_config_flags)
+ add_dependencies(vst3_host_smoke BASSBOXX_VST3)
+ add_test(NAME vst3_host_load COMMAND vst3_host_smoke "$<TARGET_BUNDLE_DIR:BASSBOXX_VST3>")
+endif()
