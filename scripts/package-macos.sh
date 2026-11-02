@@ -11,7 +11,8 @@ if [[ ! -f "$binary" ]]; then
  exit 1
 fi
 # Fail rather than accidentally shipping an Intel-only or Linux build.
-lipo -verify_arch arm64 x86_64 "$binary"
+lipo "$binary" -verify_arch arm64 x86_64
+echo "::notice::Verified plugin architectures: $(lipo -archs "$binary")"
 codesign --force --sign - --timestamp=none "$plugin"
 codesign --verify --deep --strict "$plugin"
 mkdir -p dist
@@ -50,7 +51,7 @@ rm -f "$archive"
 mkdir "$stage/extracted"
 ditto -x -k dist/BASSBOXX-macOS-VST3.zip "$stage/extracted"
 codesign --verify --deep --strict "$stage/extracted/BASSBOXX-macOS/BASSBOXX.vst3"
-lipo -verify_arch arm64 x86_64 "$stage/extracted/BASSBOXX-macOS/BASSBOXX.vst3/Contents/MacOS/BASSBOXX"
+lipo "$stage/extracted/BASSBOXX-macOS/BASSBOXX.vst3/Contents/MacOS/BASSBOXX" -verify_arch arm64 x86_64
 [[ -x "$stage/extracted/BASSBOXX-macOS/Install BASSBOXX.command" ]]
 (cd dist && shasum -a 256 BASSBOXX-macOS-VST3.zip > BASSBOXX-macOS-VST3.zip.sha256)
 echo 'Packaged dist/BASSBOXX-macOS-VST3.zip'
