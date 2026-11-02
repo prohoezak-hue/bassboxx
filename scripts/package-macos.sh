@@ -1,10 +1,15 @@
 #!/bin/bash
-set -euo pipefail
+set -Eeuo pipefail
+trap 'status=$?; echo "::error file=scripts/package-macos.sh,line=$LINENO::Packaging failed (exit $status): $BASH_COMMAND"; exit "$status"' ERR
 cd "$(dirname "$0")/.."
 [[ "$(uname -s)" == Darwin ]] || { echo 'Packaging requires macOS'; exit 1; }
 plugin="${1:-build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3}"
 binary="$plugin/Contents/MacOS/BASSBOXX"
-[[ -f "$binary" ]]
+if [[ ! -f "$binary" ]]; then
+ echo "::error::Expected plugin executable not found: $binary"
+ find build/BASSBOXX_artefacts -maxdepth 6 -type f
+ exit 1
+fi
 # Fail rather than accidentally shipping an Intel-only or Linux build.
 lipo -verify_arch arm64 x86_64 "$binary"
 codesign --force --sign - --timestamp=none "$plugin"
@@ -28,7 +33,11 @@ chmod +x "$bundle/Install BASSBOXX.command"
 # Include the dependency's required notices and an explicit source location.
 printf '%s\n' "https://github.com/prohoezak-hue/bassboxx/tree/$(git rev-parse HEAD)" 'JUCE source: https://github.com/juce-framework/JUCE/tree/51a8a6d7aeae7326956d747737ccf1575e61e209' > "$bundle/Source.txt"
 juce_source="${JUCE_SOURCE_DIR:-build/_deps/juce-src}"
-[[ -f "$juce_source/LICENSE.md" ]]
+if [[ ! -f "$juce_source/LICENSE.md" ]]; then
+ echo "::error::JUCE license not found at $juce_source/LICENSE.md"
+ find build -name LICENSE.md
+ exit 1
+fi
 cp "$juce_source/LICENSE.md" "$bundle/JUCE-LICENSE.md"
 # Exercise installation and upgrade from the exact directory being packaged.
 BASSBOXX_PLUGIN_DIR="$stage/test-install" BASSBOXX_BACKUP_DIR="$stage/backups" bash "$bundle/Install BASSBOXX.command"

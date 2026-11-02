@@ -1,6 +1,7 @@
 #!/bin/bash
 # Installs a precompiled VST3. No JUCE, Xcode, admin access or compilation needed.
-set -euo pipefail
+set -Eeuo pipefail
+trap 'status=$?; echo "Installation failed at line $LINENO (exit $status): $BASH_COMMAND"; exit "$status"' ERR
 cd "$(dirname "$0")"
 if [[ "$(uname -s)" != Darwin ]]; then
  echo 'BASSBOXX requires macOS. This installer cannot run on this operating system.'
