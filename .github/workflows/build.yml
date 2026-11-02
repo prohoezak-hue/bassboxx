@@ -1,0 +1,26 @@
+name: Build and test
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  mac:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure universal macOS plugin
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+      - name: Build
+        run: cmake --build build --config Release --parallel 3
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Package
+        run: ditto -c -k --sequesterRsrc --keepParent build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3 BASSBOXX-macOS-VST3.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BASSBOXX-macOS
+          path: BASSBOXX-macOS-VST3.zip
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -DBASSBOXX_ENGINE_ONLY=ON
+      - run: cmake --build build --parallel 2
+      - run: ctest --test-dir build --output-on-failure
