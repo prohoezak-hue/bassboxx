@@ -24,6 +24,25 @@ The existing standalone app, VST3 host/scan, external validator, quarantine and
 local-build/installer checks remain required for the new release. The new skin
 snapshot is rendered by the real editor and published with the release.
 
+The full Mac and portable workflow passed for source commit
+`dc58fe446ee7624cb295ed6363bce6995d3ae339` in
+[CI run 41690506224](https://github.com/prohoezak-hue/bassboxx/actions/runs/41690506224)
+(26 minutes 32 seconds overall; Mac job 24 minutes 59 seconds). This includes
+all project tests, repeated standalone/VST3 launch checks, both external
+validators, installer/security regressions and the packaged local build route.
+No tests were disabled. The real editor screenshot was visually inspected for
+legibility, control placement and clipping.
+
+**[Download updated standalone 1.1.0](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-dc58fe446ee7/BASSBOXX-macOS-Standalone.zip)**
+([actual panel preview](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-dc58fe446ee7/BASSBOXX-interface.png)).
+The published ZIP was independently downloaded and verified. SHA-256:
+`8a68368c3457064434ea3f1ac098bacbf4fabcd16e9c907e0da60bb4f05c4683`.
+ZIP CRCs, payload hashes, executable launchers, version/bundle identity,
+arm64/x86_64 executable slices and signature resources passed inspection.
+Packaged instrument/test source matches the tested commit byte for byte.
+Physical MIDI hardware, live audio on the user's Mac and MPC 3.10 remain local
+checks; no MPC compatibility claim is made. macOS protections remain intact.
+
 ## Standalone application
 
 The new standalone target adds `BASSBOXX.app` alongside the VST3 at the user's
