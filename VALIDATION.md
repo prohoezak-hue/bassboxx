@@ -1,5 +1,30 @@
 # BASSBOXX macOS VST3 validation
 
+## MPC 3.10 scan timeout investigation
+
+MPC 3.10 has been reported to time out while scanning BASSBOXX. The previous
+offline test results below do not establish compatibility with that host.
+The repair branch adds the official Steinberg VST3 Validator (SDK 3.7.14 build
+55) and pluginval 1.0.4 at strictness level 5, with editor tests enabled, to the
+macOS workflow. Both tools are built from pinned source commits and their
+pinned submodules. They validate the actual universal VST3 bundle using the
+runner's native architecture; this alone does not test both architecture slices.
+
+The validator processes have 180-second and 600-second wall-clock limits,
+respectively. pluginval also retains its 30-second inactivity timeout. A timeout,
+crash or nonzero exit fails the job. Both validators are attempted independently
+after successful builds, even if a preceding test fails. Their output and CTest
+results are retained in the test-evidence artifact on failure. The Mac ZIP is
+packaged and uploaded only after all checks pass; repair-branch builds do not
+publish a release or replace the existing download.
+
+Current local verification: portable engine CTest passed (1/1), validator runner
+success/failure/timeout behavior checked, and the pinned Steinberg validator
+built on Linux and passed its 43 internal self-tests. Those self-tests do not
+validate BASSBOXX. macOS validator results and an MPC 3.10 rescan remain required
+before claiming the reported scan timeout is fixed. No DSP, presets, interface,
+or plugin features were changed by this CI integration.
+
 ## Finished download
 
 [Download BASSBOXX-macOS-VST3.zip](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-00805dd4f48d/BASSBOXX-macOS-VST3.zip)

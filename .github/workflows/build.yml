@@ -1,7 +1,7 @@
 name: Build BASSBOXX macOS VST3
 on:
   push:
-    branches: [main]
+    branches: [main, fix/vst3-host-load-validation]
     paths-ignore: ["**.md", "docs/**", "examples/**"]
   pull_request:
     paths-ignore: ["**.md", "docs/**", "examples/**"]
@@ -15,17 +15,56 @@ jobs:
   mac:
     name: Universal macOS VST3, tests and ZIP
     runs-on: macos-14
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: steinbergmedia/vst3sdk
+          # VST SDK 3.7.14 build 55, including its pinned SDK submodules.
+          ref: 43b4e366ff84afc9b4247776acbf5e234683b77f
+          path: .validator-tools/vst3sdk
+      - uses: actions/checkout@v4
+        with:
+          repository: Tracktion/pluginval
+          # pluginval 1.0.4; recursive checkout uses the pinned JUCE gitlink.
+          ref: ed19c2c16b57a6d94db391bea3ef4a80b769d5bf
+          submodules: recursive
+          path: .validator-tools/pluginval
+      - name: Build pinned external validators
+        id: validator-tools
+        run: |
+          git -C .validator-tools/vst3sdk submodule update --init --depth 1 base cmake pluginterfaces public.sdk
+          cmake -S .validator-tools/vst3sdk -B "$RUNNER_TEMP/vst3sdk-build" \
+            -DCMAKE_BUILD_TYPE=Release -DSMTG_ENABLE_VST3_PLUGIN_EXAMPLES=OFF \
+            -DSMTG_ENABLE_VST3_HOSTING_EXAMPLES=OFF -DSMTG_ENABLE_VSTGUI_SUPPORT=OFF \
+            -DSMTG_CODE_SIGN_IDENTITY_MAC=-
+          cmake --build "$RUNNER_TEMP/vst3sdk-build" --config Release --target validator --parallel 3
+          cmake -S .validator-tools/pluginval -B "$RUNNER_TEMP/pluginval-build" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/pluginval-build" --config Release --target pluginval --parallel 3
       - name: Configure Apple Silicon and Intel VST3 only
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
       - name: Build plugin and test executables
+        id: plugin-build
         run: cmake --build build --config Release --parallel 3
       - name: Run engine, processor and real VST3 host loading tests and render the editor
         run: |
-          ctest --test-dir build -C Release --output-on-failure
+          ctest --test-dir build -C Release --output-on-failure --timeout 120
           build/plugin_tests "$RUNNER_TEMP/BASSBOXX-interface.png"
+      - name: Steinberg VST3 Validator
+        if: ${{ !cancelled() && steps.validator-tools.outcome == 'success' && steps.plugin-build.outcome == 'success' }}
+        run: |
+          python3 scripts/run-validator.py 180 build/validator-logs/steinberg.log \
+            "$RUNNER_TEMP/vst3sdk-build/bin/Release/validator" \
+            "$PWD/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
+      - name: pluginval strictness 5 (including editor tests)
+        if: ${{ !cancelled() && steps.validator-tools.outcome == 'success' && steps.plugin-build.outcome == 'success' }}
+        run: |
+          python3 scripts/run-validator.py 600 build/validator-logs/pluginval-console.log \
+            "$RUNNER_TEMP/pluginval-build/pluginval_artefacts/Release/pluginval.app/Contents/MacOS/pluginval" \
+            --strictness-level 5 --random-seed 123456 --timeout-ms 30000 \
+            --output-dir "$PWD/build/validator-logs/pluginval" \
+            --validate "$PWD/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
       - name: Verify, sign, test installer, and package ZIP
         run: bash scripts/package-macos.sh
       - uses: actions/upload-artifact@v4
@@ -37,10 +76,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: BASSBOXX-macOS-test-evidence
           path: |
             build/Testing/Temporary/LastTest.log
+            build/validator-logs/
             ${{ runner.temp }}/BASSBOXX-interface.png
           if-no-files-found: error
   engine:
