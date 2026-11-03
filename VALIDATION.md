@@ -18,12 +18,21 @@ results are retained in the test-evidence artifact on failure. The Mac ZIP is
 packaged and uploaded only after all checks pass; repair-branch builds do not
 publish a release or replace the existing download.
 
-Current local verification: portable engine CTest passed (1/1), validator runner
-success/failure/timeout behavior checked, and the pinned Steinberg validator
-built on Linux and passed its 43 internal self-tests. Those self-tests do not
-validate BASSBOXX. macOS validator results and an MPC 3.10 rescan remain required
-before claiming the reported scan timeout is fixed. No DSP, presets, interface,
-or plugin features were changed by this CI integration.
+Repair commit `3c421ee` passed the [macOS validation and packaging run](https://github.com/prohoezak-hue/bassboxx/actions/runs/41586405381).
+The workflow completed successfully in 10 minutes 25 seconds, including both
+external validators, the existing engine/processor/real-VST3-host tests, editor
+rendering, universal architecture and signature verification, and installer/ZIP
+checks. The run produced the `BASSBOXX-macOS-VST3` artifact (7.2 MB), containing
+the new ZIP and its checksum. Download it from that run's Artifacts section while
+signed in to GitHub. This repair-branch artifact does not replace the public
+release linked below.
+
+Local verification also passed: portable engine CTest (1/1), validator runner
+success/failure/timeout/missing-executable/signal behavior, and the pinned
+Steinberg validator's 43 internal self-tests. No validator failure or timeout
+was reproduced. No DSP, presets, interface, or plugin features were changed by
+this CI integration. The reported MPC 3.10 scan timeout remains unconfirmed and
+unfixed; an actual MPC rescan is still required before claiming compatibility.
 
 ## Finished download
 
