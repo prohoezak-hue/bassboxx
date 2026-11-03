@@ -12,10 +12,18 @@ concurrency:
   group: bassboxx-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  metadata-probe:
+    name: Diagnose generated app quarantine metadata
+    runs-on: macos-14
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/run-validator.py 240 build/validator-logs/metadata-probe.log bash scripts/probe-macos-quarantine.sh
   mac:
     name: Universal macOS app, VST3, tests and ZIPs
     runs-on: macos-14
     timeout-minutes: 60
+    needs: metadata-probe
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
