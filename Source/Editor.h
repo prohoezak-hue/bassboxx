@@ -100,7 +100,7 @@ public:
     const float radius = knob.getWidth() * .5f;
     for (int i = 0; i < 64; ++i) {
       const float a = float(i) * juce::MathConstants<float>::twoPi / 64;
-      g.setColour(juce::Colour(i % 2 ? 0xff51493c : 0xff080705));
+      g.setColour(juce::Colour(i % 2 ? 0xff3b3429 : 0xff12100c));
       g.drawLine(centre.x + std::sin(a) * radius * .18f, centre.y - std::cos(a) * radius * .18f,
                  centre.x + std::sin(a) * radius * .96f, centre.y - std::cos(a) * radius * .96f, .65f);
     }
@@ -280,8 +280,9 @@ public:
       slider->setComponentID(id);
       slider->setName(name);
       slider->setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-      slider->setTextBoxStyle(juce::Slider::TextBoxBelow, false, 66, 18);
       addAndMakeVisible(*slider);
+      // Create the editable value label after inheriting the panel look and feel.
+      slider->setTextBoxStyle(juce::Slider::TextBoxBelow, false, 66, 18);
       auto label = std::make_unique<juce::Label>();
       label->setText(name, juce::dontSendNotification);
       label->setJustificationType(juce::Justification::centred);
