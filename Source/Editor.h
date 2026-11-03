@@ -268,7 +268,7 @@ public:
     for (int i = 0; i < 3; ++i) {
       g.drawText("OSCILLATOR " + juce::String(i + 1), 207, 140 + 150 * i, 194, 22, juce::Justification::centred);
       g.setFont(10); g.drawText("WAVEFORM", 208, 168 + 150 * i, 194, 18, juce::Justification::centred); g.setFont(12);
-      g.drawText("-24              0              +24", 78, 250 + 150 * i, 122, 17, juce::Justification::centred);
+      g.drawText("-24      0      +24", 78, 250 + 150 * i, 122, 17, juce::Justification::centred);
     }
     g.drawText("FILTER CONTOUR", 570, 260, 305, 16, juce::Justification::centred);
     g.drawText("LOUDNESS CONTOUR", 570, 410, 305, 16, juce::Justification::centred);
