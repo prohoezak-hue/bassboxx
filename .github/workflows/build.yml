@@ -49,9 +49,9 @@ jobs:
         run: python3 scripts/run-validator.py 1200 build/validator-logs/build.log cmake --build build --config Release --parallel 3
       - name: Run engine, processor and real VST3 host loading tests and render the editor
         run: |
-          ctest --test-dir build -C Release --output-on-failure --timeout 120
-          ctest --test-dir build -C Release --output-on-failure --repeat until-fail:3 -R 'vst3_scan|vst3_host_load|standalone'
-          build/plugin_tests "$RUNNER_TEMP/BASSBOXX-interface.png"
+          python3 scripts/run-validator.py 360 build/validator-logs/native-tests.log ctest --test-dir build -C Release --output-on-failure --timeout 120
+          python3 scripts/run-validator.py 360 build/validator-logs/repeated-host-tests.log ctest --test-dir build -C Release --output-on-failure --repeat until-fail:3 -R 'vst3_scan|vst3_host_load|standalone'
+          python3 scripts/run-validator.py 120 build/validator-logs/editor-render.log build/plugin_tests "$RUNNER_TEMP/BASSBOXX-interface.png"
           mkdir -p dist
           cp "$RUNNER_TEMP/BASSBOXX-interface.png" dist/BASSBOXX-interface.png
       - name: Steinberg VST3 Validator
