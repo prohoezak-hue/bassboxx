@@ -25,7 +25,28 @@ phase timing and 30-second host deadlines, installer first-install/upgrade,
 root/nested quarantine rejection with previous-install preservation, signature
 tamper rejection, ZIP payload verification, a full build from a simulated
 quarantined extracted payload, and both external validators on the locally
-built/installed VST3. These new checks require a new successful CI run; the
+built/installed VST3. These checks passed for repair commit
+`f7b6961d6e0573a7067963391ac7cff43a63fc01` in
+[CI run 41592649183](https://github.com/prohoezak-hue/bassboxx/actions/runs/41592649183)
+(20 minutes 35 seconds overall; Mac job 20 minutes 12 seconds). The run completed
+successfully, including publication. No project test or validator was disabled.
+The Mac runner executed its native architecture; both universal slices were
+compiled/verified, but Intel runtime/MPC testing remains separate.
+
+**[Download the new local-development ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-f7b6961d6e05/BASSBOXX-macOS-VST3.zip)**
+([release notes](https://github.com/prohoezak-hue/bassboxx/releases/tag/macos-f7b6961d6e05)).
+The published ZIP was independently downloaded and checked against its published
+SHA-256: `beb60e9357f8626eede09f2275ce92e792532394b66ee2bb6f990d348e59f19e`.
+ZIP CRCs, every payload checksum, executable launcher permissions, bundle identity,
+signature resources and both 64-bit Mach-O slices passed inspection. The included
+instrument source matched this commit byte for byte. The original `Source/` files
+are unchanged from the previous repair baseline.
+
+For installation, follow `packaging/Installation.txt` or the same file inside the
+ZIP. Use **Build BASSBOXX on this Mac.command** for the free local-development
+route. The precompiled plugin remains ad-hoc signed and can still be rejected;
+no Apple distribution approval or MPC compatibility is claimed. A user's Finder
+launch, actual Mac policy and MPC 3.10 scan/playback remain unverified. The
 historical results below apply only to their stated source commits.
 
 ## MPC 3.10 scan timeout investigation
