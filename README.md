@@ -4,20 +4,22 @@ A standalone macOS synthesizer and VST3 instrument. Supports native Apple Silico
 
 ![BASSBOXX interface](docs/BASSBOXX-interface.png)
 
-**[Download BASSBOXX standalone for Mac — ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-dc58fe446ee7/BASSBOXX-macOS-Standalone.zip)**
+**[Download BASSBOXX standalone for Mac — ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-25145632ff6d/BASSBOXX-macOS-Standalone.zip)**
 
 Use the **up/down arrows** immediately before the sound dropdown to step through the 100 factory sounds, or choose a sound directly from the dropdown. The arrows wrap at either end.
 
 Choose **BASSBOXX-macOS-Standalone.zip** from the newest standalone-and-VST3 release. Extract the entire folder and open **BASSBOXX.app**. No MPC or other host is required. In the app choose **Options > Audio/MIDI Settings** to select speakers/headphones and enable your MIDI controller, or play the original on-screen keyboard.
 
-The app preserves the original panel, synthesizer, 100 presets and patch-file controls. Normal quitting saves its state. The standalone ZIP also includes a local-build helper that installs a newly compiled app in `~/Applications/BASSBOXX.app` using free Apple Command Line Tools. If macOS rejects the download, changing to standalone has not solved its trust status: follow the included local-build instructions, and stop if macOS blocks the helper or local output. Security protections and quarantine remain intact.
+The app retains the original synthesizer, 100 presets and patch-file controls, with the requested wood-and-gold skin. Normal quitting saves its state. The standalone ZIP also includes a local-build helper that installs a newly compiled app in `~/Applications/BASSBOXX.app` using free Apple Command Line Tools. If macOS rejects the download, changing to standalone has not solved its trust status: follow the included local-build instructions, and stop if macOS blocks the helper or local output. Security protections and quarantine remain intact.
 
 The separate **BASSBOXX-macOS-VST3.zip** is still available for music hosts. [Build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Validation](VALIDATION.md)
 
-## Vintage panel and performance controls (1.1.0)
+## Vintage panel and performance controls (1.1.1)
 
-The panel now uses a Model D-inspired charcoal face, cream section markings,
-silver-trimmed black knobs and walnut-style cheeks, with BASSBOXX branding.
+The panel follows the supplied dark-wood and gold design: brass borders and knob
+rims, warm ivory keys and lettering, wood cheeks, an amber power lamp and colourful
+ProHoeZak branding. Up/down buttons before the preset dropdown browse all 100
+sounds; click and hold to repeat, with wraparound at either end.
 This is a visual style; the synthesizer is not a measured Model D circuit emulation.
 All 21 existing synthesis controls, four oscillator waveforms and 100 factory
 patch definitions remain available.

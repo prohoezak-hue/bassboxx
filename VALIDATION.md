@@ -14,8 +14,26 @@ read the processor's current program, so browsing continues from dropdown,
 host and restored-state selections. The dropdown and voice mode refresh together.
 Processor tests cover every factory sound, boundary wrapping, direct dropdown
 selection, complete parameter loading, host/state changes and visible placement.
-The release still requires the full existing Mac/portable checks and visual
-inspection of the real editor snapshot before delivery.
+The full Mac/portable workflow passed for source commit
+`25145632ff6d803a2221aca53688b98c86b89d9b` in
+[CI run 41701917930](https://github.com/prohoezak-hue/bassboxx/actions/runs/41701917930)
+(24 minutes 41 seconds overall, including the queue; Mac job 19 minutes 22 seconds).
+All project suites, repeated standalone/VST3 launch checks, Steinberg Validator,
+pluginval, installer/security regressions and the packaged local build route
+passed. The real Mac editor snapshot was inspected for legibility and clipping.
+Local Linux engine and native processor/editor CTest suites also passed (2/2,
+4.18 seconds), including every factory sound and all new browsing behavior.
+
+**[Download standalone 1.1.1](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-25145632ff6d/BASSBOXX-macOS-Standalone.zip)**
+([actual Mac panel preview](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-25145632ff6d/BASSBOXX-interface.png)).
+The public ZIP was independently downloaded and verified. SHA-256:
+`be5408fb11e84cd680c8a5aad524204b8437c983a4af6e29b58fcc1c13c847c8`.
+ZIP CRCs, payload checksums, executable launchers, version/bundle identity,
+arm64/x86_64 executable slices and signature resources passed inspection.
+Packaged source matches the tested commit byte for byte. Engine, factory
+patch definitions and processor source are unchanged from verified 1.1.0.
+The runner executed its native architecture; physical audio/MIDI on the user's
+Mac and MPC 3.10 remain local checks. macOS security protections remain intact.
 
 ## 1.1.0 vintage skin, voice mode and wheels
 
