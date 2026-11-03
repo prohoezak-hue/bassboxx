@@ -1,36 +1,52 @@
-BASSBOXX by ProHoeZak — macOS VST3 instrument
+BASSBOXX by ProHoeZak — local macOS VST3 development installation
 
-Requires macOS 11 or newer and an MPC desktop version supporting VST3 instruments.
-Supports native Apple Silicon (M-series) and Intel Macs. No standalone app.
-
-INSTALL
-1. Quit MPC desktop.
-2. Extract the entire BASSBOXX-macOS-VST3.zip download.
-3. Double-click "Install BASSBOXX.command" in the extracted folder.
-   The installer copies the already compiled plugin to your user VST3 folder.
-   No JUCE, Xcode, administrator password or programming is needed.
-   If Finder requires permission to open the installer, right-click it and choose
-   Open, if your Mac's security policy permits this trusted local installation.
-4. Restart MPC desktop. In plugin preferences/manager, enable and scan:
+FREE LOCAL-BUILD INSTALLATION (no paid Apple membership)
+1. Quit MPC. Extract the entire ZIP and keep all files together.
+2. Double-click "Build BASSBOXX on this Mac.command".
+   If it opens Apple's free Command Line Tools installer, finish that setup,
+   then double-click the builder again. No code editing or Homebrew is needed.
+3. Allow several minutes and several GB of disk space. Wait for:
+   "PASS: locally compiled, tested, installed and loaded".
+   The builder verifies its payload and the Apple assessment of the CMake tool,
+   compiles the original universal instrument, runs all four project tests,
+   backs up an existing plugin, and checks the newly installed VST3 through a host.
+4. Restart MPC 3.10 and enable/rescan your user VST3 folder:
    ~/Library/Audio/Plug-Ins/VST3/
-5. On a plugin program/track choose BASSBOXX, enable monitoring, and play your MIDI
-   controller/pads or click the on-screen keyboard. Start with low monitor volume.
+   If BASSBOXX was previously failed, use MPC's rescan/retry controls. Menu names
+   vary. Do not delete MPC settings or projects.
+5. Add a plugin track, select BASSBOXX, enable MIDI monitoring, choose your audio
+   device and play at low volume. Test saving/reopening your MPC project too.
 
-MANUAL INSTALL (if you prefer Finder)
-Copy BASSBOXX.vst3 to ~/Library/Audio/Plug-Ins/VST3/ using Finder > Go > Go to Folder.
-Create the VST3 folder if it does not exist. Replace an older BASSBOXX.vst3 if asked.
+If macOS blocks the helper or locally compiled plugin, STOP and retain its exact
+message. Do not remove quarantine or change security policy. Finder launching
+of the helper and MPC scanning on your specific Mac remain unverified.
 
-TROUBLESHOOTING
-- The plugin has an ad-hoc signature. It is not Apple Developer ID signed or
-  notarized. macOS or managed security policy may block downloaded development
-  plugins. If blocked, a properly Developer ID signed/notarized build is needed;
-  do not disable Gatekeeper or other system security protections.
-- VST2-only MPC versions cannot load a VST3. Menu names vary by MPC version.
-- This is for MPC desktop on macOS; MPC hardware standalone mode cannot load it.
-- If silent, check audio-device settings, MIDI track routing and monitoring.
-- MPC host scanning, real-time playback and project recall need testing in MPC;
-  automated offline tests do not establish host compatibility or sound quality.
+WHAT THIS DOES AND DOES NOT SOLVE
+The included precompiled VST3 is ad-hoc signed, not Developer ID signed/notarized.
+A valid codesign result proves integrity, not Apple's approval for downloaded
+software. With quarantine present, spctl can correctly reject this binary.
+"Install BASSBOXX.command" refuses a quarantined/rejected bundle before replacing
+an older installation. Copying it manually or re-signing it is not a trust fix.
 
-Presets: choose any of 100 factory patches in the menu. Save/load custom patches
-using the editor buttons. Your MPC project also stores the parameter state.
-Existing synth features and the vintage interface are preserved.
+The free route compiles NEW code locally from the original source and signs only
+that new output. It does not make the download notarized. spctl may still reject
+ad-hoc local code as a distribution candidate. The builder checks actual local
+VST3 loading without changing Apple's policy. It never removes quarantine,
+disables Gatekeeper/SIP or adds trust exceptions. A managed Mac may still refuse
+local development code. Public Developer ID distribution requires the appropriate
+paid Apple membership and credentials; a free account cannot supply that.
+
+An older installation is backed up under:
+~/Library/Application Support/BASSBOXX/Backups/
+Builds and logs are retained under:
+~/Library/Application Support/BASSBOXX/Local Builds/
+The builder prints the exact Build.log path. It does not send logs anywhere.
+
+STILL NEEDS TESTING INSIDE MPC 3.10
+- Scan and retry after the previous Timeout.
+- Interface, MIDI routing, live playback, factory programs, pitch bend, sustain,
+  polyphony, Panic, automation, custom patch dialogs, project recall, audio export
+  and listening/latency checks.
+External validators are not MPC certification. No MPC compatibility claim is made.
+The original interface, DSP, 100 presets, saved parameter IDs and features remain.
+This is a desktop VST3, not a plugin for MPC hardware standalone mode.

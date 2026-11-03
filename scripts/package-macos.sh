@@ -40,10 +40,9 @@ if [[ ! -f "$juce_source/LICENSE.md" ]]; then
  exit 1
 fi
 cp "$juce_source/LICENSE.md" "$bundle/JUCE-LICENSE.md"
-# Exercise installation and upgrade from the exact directory being packaged.
-BASSBOXX_PLUGIN_DIR="$stage/test-install" BASSBOXX_BACKUP_DIR="$stage/backups" bash "$bundle/Install BASSBOXX.command"
-BASSBOXX_PLUGIN_DIR="$stage/test-install" BASSBOXX_BACKUP_DIR="$stage/backups" bash "$bundle/Install BASSBOXX.command"
-codesign --verify --deep --strict "$stage/test-install/BASSBOXX.vst3"
+# Include a tested no-membership local development workflow, not a trust bypass.
+bash scripts/prepare-local-build-payload.sh "$bundle"
+bash tests/InstallerTests.sh "$bundle" "$stage/installer-tests"
 archive="$PWD/dist/BASSBOXX-macOS-VST3.zip"
 rm -f "$archive"
 (cd "$stage" && ditto -c -k --sequesterRsrc --keepParent BASSBOXX-macOS "$archive")
@@ -53,5 +52,18 @@ ditto -x -k dist/BASSBOXX-macOS-VST3.zip "$stage/extracted"
 codesign --verify --deep --strict "$stage/extracted/BASSBOXX-macOS/BASSBOXX.vst3"
 lipo "$stage/extracted/BASSBOXX-macOS/BASSBOXX.vst3/Contents/MacOS/BASSBOXX" -verify_arch arm64 x86_64
 [[ -x "$stage/extracted/BASSBOXX-macOS/Install BASSBOXX.command" ]]
+[[ -x "$stage/extracted/BASSBOXX-macOS/Build BASSBOXX on this Mac.command" ]]
+(cd "$stage/extracted/BASSBOXX-macOS" && shasum -a 256 -c Payload-SHA256.txt)
+python3 scripts/run-validator.py 30 build/validator-logs/extracted-host-load.log \
+ build/vst3_host_smoke "$stage/extracted/BASSBOXX-macOS/BASSBOXX.vst3"
+# Model a downloaded payload, retain its quarantine, and build fresh local output.
+# CI invokes its own reviewed helper directly; Finder launching on a user's Mac
+# is a separate, unverified interaction and must respect local policy.
+xattr -r -w com.apple.quarantine '0083;00000000;BASSBOXX-CI;' "$stage/extracted/BASSBOXX-macOS"
+BASSBOXX_PLUGIN_DIR="$PWD/build/local-installed" \
+ BASSBOXX_BACKUP_DIR="$PWD/build/local-backups" \
+ BASSBOXX_BUILD_ROOT="$PWD/build/local-build-test" \
+ /bin/bash "$stage/extracted/BASSBOXX-macOS/Build BASSBOXX on this Mac.command"
+xattr -p com.apple.quarantine "$stage/extracted/BASSBOXX-macOS" >/dev/null
 (cd dist && shasum -a 256 BASSBOXX-macOS-VST3.zip > BASSBOXX-macOS-VST3.zip.sha256)
 echo 'Packaged dist/BASSBOXX-macOS-VST3.zip'

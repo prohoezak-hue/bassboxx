@@ -4,28 +4,33 @@ A macOS VST3 synthesizer instrument for Akai MPC desktop. Supports native Apple 
 
 ![BASSBOXX interface](docs/BASSBOXX-interface.png)
 
-**[Download BASSBOXX for Mac — ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-00805dd4f48d/BASSBOXX-macOS-VST3.zip)**
+**[Download BASSBOXX for Mac — local-build ZIP](https://github.com/prohoezak-hue/bassboxx/releases)**
 
-Verified universal build 1.0.1. [All releases](https://github.com/prohoezak-hue/bassboxx/releases) · [Automatic build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Audio demo](examples/BASSBOXX-demo.wav) · [Validation details](VALIDATION.md)
+Choose the newest **macOS local development** prerelease and its `BASSBOXX-macOS-VST3.zip` asset. It includes the original instrument source, verified build dependencies, a guided local builder, and a precompiled development VST3. [Build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Audio demo](examples/BASSBOXX-demo.wav) · [Validation details](VALIDATION.md)
 
-## Download and install — no programming required
+## Install on your own Mac without a paid Apple membership
 
-1. Open **Plugin downloads** above and choose the newest completed **BASSBOXX macOS** release. Download **BASSBOXX-macOS-VST3.zip** under **Assets**, rather than the source-code archive. A release appears only after the Mac build, tests and packaging checks pass. GitHub sign-in may be required for a private repository. If there is no release yet, inspect **Automatic build status**; a failed or pending build does not provide a finished plugin.
-2. Quit MPC desktop and extract the entire ZIP.
-3. Double-click **Install BASSBOXX.command** in the extracted folder. It installs the precompiled plugin into your user VST3 folder and keeps an older installation as a backup. No JUCE, Xcode, administrator password or code editing is needed. If Finder asks, right-click → Open, if your Mac's security policy permits it.
-4. Restart MPC desktop and rescan the user VST3 folder in its plugin preferences/manager:
-   `~/Library/Audio/Plug-Ins/VST3/`
-5. Create a plugin program/track, choose **BASSBOXX**, enable monitoring and route your MIDI controller/pads to the track. Select an audio device and begin at 44.1 or 48 kHz, 256 samples. You can also click the three-octave keyboard. Start with low monitor volume.
+1. Quit MPC and extract the **entire** ZIP. Keep all its files together.
+2. Double-click **Build BASSBOXX on this Mac.command**. If Apple's free Command Line Tools are missing, it opens Apple's installer: complete that installation, then double-click the builder again. No code editing, Homebrew, paid membership, or Apple signing credentials are needed. Allow several minutes and several GB of free disk space for compilation.
+3. Wait for **PASS: locally compiled, tested, installed and loaded**. The helper builds the existing universal instrument, runs the engine/processor/VST3 scan/host tests, backs up an older installation, and installs in `~/Library/Audio/Plug-Ins/VST3/`. Its log location is printed in the window.
+4. Restart MPC 3.10. In its plugin manager, enable and rescan that user VST3 folder, then retry BASSBOXX using MPC's own rescan/retry controls if it was previously marked failed. Menu names vary; do not delete MPC settings or projects.
+5. Create a plugin track, choose BASSBOXX, enable MIDI monitoring, select your audio device, and start at low volume. Verify scanning, the interface, notes, factory presets, automation and saving/reopening a project.
 
-For manual installation, copy **BASSBOXX.vst3** into the same folder using Finder → Go → Go to Folder. Create the folder if needed. The ZIP includes detailed installation instructions, build/source information and a signature-verified universal plugin. Each release also supplies a SHA-256 checksum file.
+**If macOS blocks the helper or locally built plugin, stop and keep the exact message.** This workflow does not remove quarantine, disable Gatekeeper/SIP, add trust exceptions, or bypass managed policy. Its bundled CMake tool must pass Apple's assessment before execution. Running the helper through Finder on your particular Mac and loading into MPC still require local verification.
 
-### Compatibility and remaining Mac testing
+## Why a valid signature can still be rejected
 
-Use an MPC desktop version supporting third-party **VST3 instruments**. VST2-only MPC versions cannot load this plugin. MPC menu names vary by version. MPC hardware standalone mode cannot load desktop VST3 plugins.
+The precompiled VST3 is ad-hoc signed. `codesign` reporting “valid on disk” checks integrity; it does not mean Apple has approved or notarized a download. A quarantined ad-hoc plugin can therefore correctly receive `spctl: rejected`. A free Apple account cannot provide Developer ID distribution signing/notarization. We cannot make that downloaded binary universally trusted with a packaging change or local re-signing.
 
-The plugin is ad-hoc signed automatically in CI. It is not Apple Developer ID signed/notarized; macOS or managed security policy may block downloaded development plugins. If blocked, a Developer ID signed/notarized build is required for that policy. Do not disable system security protections. Developer ID signing requires the owner's Apple credentials, which are not supplied here.
+The no-membership option compiles **new output on your Mac from the included original source**, then signs only that local output for development. This does not change the assessment of the downloaded binary, and `spctl` may still reject the ad-hoc local output as a distribution candidate. The helper checks signature integrity, absence of quarantine on newly compiled output, and actual local VST3 loading. These checks do not override macOS policy or prove MPC compatibility.
 
-After installation, verify MPC scanning and live playback, switch factory presets, automate cutoff/Bass Boost, and save/reopen an MPC project to check parameter recall. Test pitch bend (±2 semitones), sustain CC64, polyphony, Panic and an exported MIDI-pattern bounce. These host-specific and listening checks need MPC on a Mac. Offline CI tests are not MPC certification. Download availability and the last observed validation results are recorded in **VALIDATION.md**.
+**Install BASSBOXX.command** is only a copy/backup installer for a bundle that passes its checks. It stops if a quarantined bundle is rejected, before replacing your current installation. If macOS rejects the precompiled copy, use the local-build route above; manually copying it does not resolve its trust status. Developer ID signing/notarization would require the appropriate paid Apple membership and credentials for public distribution.
+
+## What still needs MPC 3.10 testing
+
+The previously reported scan **Timeout** has not been reproduced by the automated VST3 hosts or validators. Passing those tests does not establish its cause, fix it, or certify MPC 3.10. The host smoke test now logs elapsed time for factory discovery, instantiation, audio, state, editor creation/destruction and release; a 30-second limit makes hangs visible.
+
+Inside MPC on your Mac, check initial scan/retry, live MIDI and audio, all factory programs, pitch bend, sustain, polyphony, Panic, cutoff/Bass Boost automation, custom patch dialogs, project recall, a MIDI-pattern audio export and CPU/latency. Keep the builder log and MPC's exact error if a scan still times out. MPC hardware standalone mode and VST2-only hosts cannot load a desktop VST3.
 
 ## Instrument
 
@@ -40,7 +45,7 @@ After installation, verify MPC scanning and live playback, switch factory preset
 
 ## Automated builds and development
 
-GitHub Actions runs on pushes to `main`, pull requests and manual workflow dispatch. It builds a universal `arm64;x86_64` macOS VST3, runs engine/processor/editor tests, verifies both binary slices, ad-hoc signs and verifies the bundle, tests installer installation and upgrade, then extracts and verifies the ZIP again. Linux runs the portable DSP regression suite. Both jobs must pass before the publication job creates a versioned development release with the ZIP and checksum. It uses GitHub's built-in workflow token, with write permission scoped to publication; no personal token is needed on the runner.
+GitHub Actions runs on pushes to `main` and the repair branch, pull requests and manual workflow dispatch. It builds a universal `arm64;x86_64` macOS VST3, runs engine/processor/editor tests, verifies both binary slices, ad-hoc signs and verifies the bundle, tests installer installation and upgrade, then extracts and verifies the ZIP again. Linux runs the portable DSP regression suite. The Mac job also tests the packaged local builder, first install/upgrade, quarantine and signature rejection, and both external validators on the locally built/installed copy. Both jobs must pass before a main/repair-branch push publishes a versioned development prerelease with the ZIP and checksum. It uses GitHub's built-in workflow token, with write permission scoped to publication; no personal token is needed on the runner.
 
 For maintainers, the build commands are in `.github/workflows/build.yml`; packaging is in `scripts/package-macos.sh`. CMake fetches pinned JUCE 8.0.6 (commit `51a8a6d7aeae7326956d747737ccf1575e61e209`) automatically. `-DJUCE_SOURCE_DIR=/path/to/JUCE` optionally reuses that dependency. On non-macOS platforms CMake builds the shared processor code and test utilities only, without a plugin or standalone target. `-DBASSBOXX_ENGINE_ONLY=ON` builds portable engine tests without JUCE. Neither test utilities nor the audio-demo renderer are shipped as instrument applications.
 

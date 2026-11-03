@@ -1,5 +1,33 @@
 # BASSBOXX macOS VST3 validation
 
+## Security rejection and local development installation
+
+The user's Mac reported quarantine present, `spctl: rejected`, and an intact
+codesign signature. The distributed plugin is ad-hoc signed, not Developer ID
+signed/notarized. These observations are consistent; signature integrity is not
+distribution approval. No paid Apple membership or signing credentials are
+available, and no change to quarantine or security policy is authorized.
+
+The installer now stops before replacement when a quarantined bundle is rejected,
+rather than reporting a successful installation from an integrity check alone.
+The ZIP includes a local-build helper, exact-commit original source, pinned JUCE
+8.0.6 source and an official CMake 3.31.10 disk image. All payload checksums are
+checked. CMake itself must pass codesign verification and Apple's assessment.
+The helper uses free Apple Command Line Tools, compiles a new universal VST3,
+runs four project tests, signs only newly compiled output, refuses quarantined
+local output, installs with backup, and checks actual installed VST3 loading.
+A local development build does not turn `spctl` rejection into distribution
+approval and does not override managed policy. Finder launch of the helper and
+MPC loading on the user's Mac remain separate, required local checks.
+
+New CI coverage includes metadata-only scanning, repeated scan/load cycles,
+phase timing and 30-second host deadlines, installer first-install/upgrade,
+root/nested quarantine rejection with previous-install preservation, signature
+tamper rejection, ZIP payload verification, a full build from a simulated
+quarantined extracted payload, and both external validators on the locally
+built/installed VST3. These new checks require a new successful CI run; the
+historical results below apply only to their stated source commits.
+
 ## MPC 3.10 scan timeout investigation
 
 MPC 3.10 has been reported to time out while scanning BASSBOXX. The previous
@@ -65,4 +93,4 @@ Actual MPC desktop scanning, MIDI hardware, live audio, automation, custom patch
 
 The plugin is ad-hoc signed, not Apple Developer ID signed/notarized. macOS or managed security policy may block downloaded development plugins and require a Developer ID signed/notarized release. No Apple signing credentials or commercial JUCE license are supplied.
 
-External pluginval/VST3-host validation and other DAWs were not tested. These results demonstrate offline synthesis and build/package readiness; they do not certify MPC compatibility.
+The repair branch subsequently added pluginval, Steinberg validator and real VST3 host checks (see results above). Other DAWs and MPC were not tested. These results demonstrate offline synthesis and build/package readiness; they do not certify MPC compatibility.

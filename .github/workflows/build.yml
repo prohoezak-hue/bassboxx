@@ -50,6 +50,7 @@ jobs:
       - name: Run engine, processor and real VST3 host loading tests and render the editor
         run: |
           ctest --test-dir build -C Release --output-on-failure --timeout 120
+          ctest --test-dir build -C Release --output-on-failure --repeat until-fail:3 -R 'vst3_scan|vst3_host_load'
           build/plugin_tests "$RUNNER_TEMP/BASSBOXX-interface.png"
       - name: Steinberg VST3 Validator
         if: ${{ !cancelled() && steps.validator-tools.outcome == 'success' && steps.plugin-build.outcome == 'success' }}
@@ -66,7 +67,20 @@ jobs:
             --output-dir "$PWD/build/validator-logs/pluginval" \
             --validate "$PWD/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
       - name: Verify, sign, test installer, and package ZIP
-        run: bash scripts/package-macos.sh
+        id: package
+        run: python3 scripts/run-validator.py 1800 build/validator-logs/package.log bash scripts/package-macos.sh
+      - name: Steinberg validator on locally built and installed VST3
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        run: |
+          python3 scripts/run-validator.py 180 build/validator-logs/local-steinberg.log \
+            "$RUNNER_TEMP/vst3sdk-build/bin/Release/validator" "$PWD/build/local-installed/BASSBOXX.vst3"
+      - name: pluginval on locally built and installed VST3
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        run: |
+          python3 scripts/run-validator.py 600 build/validator-logs/local-pluginval-console.log \
+            "$RUNNER_TEMP/pluginval-build/pluginval_artefacts/Release/pluginval.app/Contents/MacOS/pluginval" \
+            --strictness-level 5 --random-seed 123456 --timeout-ms 30000 \
+            --output-dir "$PWD/build/validator-logs/local-pluginval" --validate "$PWD/build/local-installed/BASSBOXX.vst3"
       - uses: actions/upload-artifact@v4
         with:
           name: BASSBOXX-macOS-VST3
@@ -82,6 +96,7 @@ jobs:
           path: |
             build/Testing/Temporary/LastTest.log
             build/validator-logs/
+            build/local-build-test/**/Build.log
             ${{ runner.temp }}/BASSBOXX-interface.png
           if-no-files-found: error
   engine:
@@ -96,7 +111,7 @@ jobs:
   publish:
     name: Publish downloadable plugin
     needs: [mac, engine]
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation') && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -117,17 +132,19 @@ jobs:
           cat > release-notes.md <<EOF_NOTES
           BASSBOXX by ProHoeZak — macOS VST3 instrument only.
 
-          Download **BASSBOXX-macOS-VST3.zip**, extract it and double-click **Install BASSBOXX.command**. No JUCE or Xcode installation is required.
+          Download **BASSBOXX-macOS-VST3.zip** and extract the entire folder.
+          For local development without a paid Apple membership, quit MPC and run **Build BASSBOXX on this Mac.command**. It may ask you to install Apple's free Command Line Tools once; rerun it after that installation. The bundled CMake build tool must pass Apple's assessment. The helper compiles the original instrument, runs tests, backs up an existing installation, and installs the locally built VST3.
 
-          Apple Silicon (arm64/M-series) and Intel (x86_64), macOS 11+. Both offline test suites, architecture/signature verification, installer installation/upgrade, and ZIP extraction verification passed before this release job ran.
+          Apple Silicon (arm64/M-series) and Intel (x86_64), macOS 11+. Engine/processor/real-VST3-host tests, Steinberg VST3 Validator and pluginval passed. CI also exercised the packaged local build and installer, rejected quarantined/unaccepted or signature-damaged binaries without replacing the installed plugin, verified both architecture slices and signatures, and tested both validators on the locally built/installed copy.
 
-          This is an ad-hoc signed development build, not Developer ID signed/notarized. macOS security policy may block it. MPC host scanning, playback, automation and project recall still require testing in MPC desktop with VST3 support.
+          The included precompiled plugin is ad-hoc signed, not Developer ID signed/notarized. It may still be rejected by macOS; do not use it as a Gatekeeper workaround. A local development build is not Apple notarization either. No quarantine attributes or security protections are removed or disabled. If macOS blocks the helper or local code, stop; this release does not override that policy.
+          MPC 3.10 scanning, playback, automation and project recall remain unverified. The previous MPC Timeout has not been reproduced or claimed fixed.
 
           Source commit: ${BUILD_SHA}
           EOF_NOTES
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/BASSBOXX-macOS-VST3.zip dist/BASSBOXX-macOS-VST3.zip.sha256 --clobber
           else
-            gh release create "$tag" dist/BASSBOXX-macOS-VST3.zip dist/BASSBOXX-macOS-VST3.zip.sha256 --target "$BUILD_SHA" --title "BASSBOXX macOS ${BUILD_SHA:0:7}" --prerelease --notes-file release-notes.md
+            gh release create "$tag" dist/BASSBOXX-macOS-VST3.zip dist/BASSBOXX-macOS-VST3.zip.sha256 --target "$BUILD_SHA" --title "BASSBOXX macOS local development ${BUILD_SHA:0:7}" --prerelease --latest=false --notes-file release-notes.md
           fi
           echo "Download: https://github.com/${GH_REPO}/releases/download/${tag}/BASSBOXX-macOS-VST3.zip" >> "$GITHUB_STEP_SUMMARY"
