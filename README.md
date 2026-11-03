@@ -16,6 +16,16 @@ The separate **BASSBOXX-macOS-VST3.zip** is still available for music hosts. [Bu
 
 ## MPC Ignore/Skipped and the Audio Unit edition (1.2.0)
 
+**[Download BASSBOXX Audio Unit for Mac](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-d6b56037c6ec/BASSBOXX-macOS-AU.zip)**
+
+Quit MPC, extract the entire AU ZIP and run **Build BASSBOXX on this Mac.command**.
+Wait for **PASS: locally compiled, tested, installed and validated Audio Unit.**
+Restart MPC, keep **Use Audio Units** checked and choose **Rescan All**. Look for
+BASSBOXX as an AU instrument. The AU installs in your user Components folder;
+it does not replace the working standalone. Apple's auval, actual AU hosting and
+pluginval passed in CI; MPC scanning/playback on your Mac is still unverified.
+
+
 The user's MPC screenshot showed both BASSBOXX VST3 copies marked Ignore/Skipped,
 other visible VST3s skipped, zero failed plugins, and Use Audio Units enabled.
 This does not establish a BASSBOXX crash or prove which VST3 support/filter policy

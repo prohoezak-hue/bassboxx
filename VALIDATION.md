@@ -19,6 +19,27 @@ registered component. The packaged AU builder validates after installing locally
 The full existing standalone/VST3 regressions remain enabled. MPC itself remains
 a required user-Mac test; a format edition is not a compatibility certification.
 
+The complete workflow passed for source commit
+`d6b56037c6ec7597d9a483ef6c47d17bd3287da0` in
+[CI run 41711400363](https://github.com/prohoezak-hue/bassboxx/actions/runs/41711400363)
+(23 minutes 36 seconds overall; Mac job 23 minutes 1 second). This includes
+Apple auval and actual AU host discovery/instantiation/MIDI audio/state/editor
+checks on the installed precompiled AU and the AU freshly built from the
+quarantined source payload, followed by pluginval on the registered local AU.
+The existing standalone/VST3 suites, both VST3 validators, installers and
+source-build checks passed too. No existing test was disabled. Local portable
+engine CTest passed in 4.39 seconds; workflow YAML, shell blocks and scripts
+passed syntax checks. Shared engine, processor and editor sources are unchanged.
+
+**[Download verified AU 1.2.0](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-d6b56037c6ec/BASSBOXX-macOS-AU.zip)**.
+The public archive was independently downloaded and verified. SHA-256:
+`0fb5db6f9d1c77183452e0e737ebfc83f9e05a1bdcd7c79321b058d78e16cad6`.
+ZIP CRCs, payload hashes, executable helpers, AudioComponents identity/factory,
+version 1.2.0, both arm64/x86_64 bundle slices and signature resources passed
+inspection. Packaged source matches the tested commit exactly. The runner used
+its native architecture; Intel runtime, Finder helper launch, real audio/MIDI and
+MPC's actual AU scan, playback and project recall remain user-Mac checks.
+
 ## 1.1.1 reference skin and preset arrows
 
 The editor now uses a cached dark wood face, orange-brown wood cheeks, brass
