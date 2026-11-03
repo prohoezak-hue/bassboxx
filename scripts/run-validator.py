@@ -40,7 +40,7 @@ def main():
     print(result, end="", flush=True)
     if status and os.environ.get("GITHUB_ACTIONS") == "true":
         # Make failures inspectable from the public run annotations too.
-        detail = (f"{log.name}: exit {status}\n" + result[-5000:])
+        detail = (f"{log.name}: exit {status}\n" + result[-1800:])
         detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
         print(f"::error::{detail}", flush=True)
     # Keep the result visible on the run summary as well as in retained logs.

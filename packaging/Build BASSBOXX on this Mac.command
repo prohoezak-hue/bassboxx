@@ -15,6 +15,17 @@ root="${BASSBOXX_BUILD_ROOT:-$HOME/Library/Application Support/BASSBOXX/Local Bu
 mkdir -p "$root"
 work="$(mktemp -d "$root/build.XXXXXX")"
 exec > >(tee "$work/Build.log") 2>&1
+log_pid=$!
+mounted=0
+cleanup() {
+ local status=$?
+ if [[ "$mounted" == 1 ]]; then /usr/bin/hdiutil detach "$work/cmake-volume" >/dev/null || true; fi
+ # Wait for the logging process, so the caller receives the final failure too.
+ exec 1>&- 2>&-
+ wait "$log_pid" || true
+ exit "$status"
+}
+trap cleanup EXIT
 trap 'status=$?; echo "Build/install stopped at line $LINENO (exit $status). Log: $work/Build.log"; exit "$status"' ERR
 echo 'BASSBOXX local development build — original interface, engine and 100 presets.'
 echo "Build and log folder: $work"
@@ -25,11 +36,6 @@ cd "$bundle"
 printf '%s  %s\n' dfb08721dccf5a2e0a368fd006c1a3ffb8c9e063229e24bc9d882585e4ef1068 LocalBuild/cmake-3.31.10-macos-universal.dmg | /usr/bin/shasum -a 256 -c -
 printf '%s  %s\n' 20b740351cc030086951d87614bc08b42d072f1e4db68db1ef1d988e66dbbdbe LocalBuild/JUCE-8.0.6.tar.gz | /usr/bin/shasum -a 256 -c -
 mkdir "$work/cmake-volume" "$work/source" "$work/juce"
-mounted=0
-cleanup() {
- if [[ "$mounted" == 1 ]]; then /usr/bin/hdiutil detach "$work/cmake-volume" >/dev/null || true; fi
-}
-trap cleanup EXIT
 /usr/bin/hdiutil attach -readonly -nobrowse -mountpoint "$work/cmake-volume" "$bundle/LocalBuild/cmake-3.31.10-macos-universal.dmg" >/dev/null
 mounted=1
 cmake_app="$work/cmake-volume/CMake.app"
