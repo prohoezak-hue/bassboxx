@@ -14,6 +14,16 @@ The app retains the original synthesizer, 100 presets and patch-file controls, w
 
 The separate **BASSBOXX-macOS-VST3.zip** is still available for music hosts. [Build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Validation](VALIDATION.md)
 
+## MPC Ignore/Skipped and the Audio Unit edition (1.2.0)
+
+The user's MPC screenshot showed both BASSBOXX VST3 copies marked Ignore/Skipped,
+other visible VST3s skipped, zero failed plugins, and Use Audio Units enabled.
+This does not establish a BASSBOXX crash or prove which VST3 support/filter policy
+MPC applied. The new AU instrument offers the enabled Audio Units route with the
+same synth, skin, sounds and presets. Follow the AU ZIP's Installation.txt, leave
+Use Audio Units checked and choose Rescan All. Actual MPC scanning/playback still
+needs verification on the user's Mac. Automated validation is not MPC certification.
+
 ## Vintage panel and performance controls (1.1.1)
 
 The panel follows the supplied dark-wood and gold design: brass borders and knob

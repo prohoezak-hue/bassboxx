@@ -83,10 +83,19 @@ jobs:
             "$RUNNER_TEMP/pluginval-build/pluginval_artefacts/Release/pluginval.app/Contents/MacOS/pluginval" \
             --strictness-level 5 --random-seed 123456 --timeout-ms 30000 \
             --output-dir "$PWD/build/validator-logs/local-pluginval" --validate "$PWD/build/local-installed/BASSBOXX.vst3"
+      - name: pluginval on registered Audio Unit
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        run: |
+          python3 scripts/run-validator.py 600 build/validator-logs/au-pluginval.log \
+            "$RUNNER_TEMP/pluginval-build/pluginval_artefacts/Release/pluginval.app/Contents/MacOS/pluginval" \
+            --strictness-level 5 --random-seed 123456 --timeout-ms 30000 \
+            --output-dir "$PWD/build/validator-logs/au-pluginval" --validate 'AudioUnit:Synths/aumu,BsBx,PhZk'
       - uses: actions/upload-artifact@v4
         with:
           name: BASSBOXX-macOS-products
           path: |
+            dist/BASSBOXX-macOS-AU.zip
+            dist/BASSBOXX-macOS-AU.zip.sha256
             dist/BASSBOXX-macOS-VST3.zip
             dist/BASSBOXX-macOS-VST3.zip.sha256
             dist/BASSBOXX-macOS-Standalone.zip
@@ -138,17 +147,18 @@ jobs:
           set -euo pipefail
           tag="macos-${BUILD_SHA:0:12}"
           cat > release-notes.md <<EOF_NOTES
-          BASSBOXX by ProHoeZak — standalone macOS synthesizer and VST3 instrument.
+          BASSBOXX by ProHoeZak — standalone macOS synthesizer, AU and VST3 instruments.
 
           **Standalone app:** download **BASSBOXX-macOS-Standalone.zip**, extract the whole folder, and open **BASSBOXX.app**. MPC is not required. Choose **Options > Audio/MIDI Settings** for your output device and MIDI controller; the original on-screen keyboard also works.
           **Local build/install:** the standalone ZIP includes **Build BASSBOXX on this Mac.command**. It builds the original instrument using free Apple Command Line Tools and the included verified dependencies, runs the tests, and installs the app in your home Applications folder. No paid Apple membership or code editing is needed. If Apple's tools installer opens, complete it and rerun the builder.
+          **Audio Unit for MPC:** download **BASSBOXX-macOS-AU.zip**. Quit MPC, extract the whole folder, and follow Installation.txt. The free local-build helper installs BASSBOXX.component in your user Audio Units folder and runs Apple's auval plus actual AU hosting checks. Restart MPC, leave **Use Audio Units** checked, choose **Rescan All**, and look for BASSBOXX as an AU instrument. This alternate format addresses the reported Ignore/Skipped VST3 scan route; a successful MPC scan and playback are still required before claiming compatibility.
           **VST3:** the separate **BASSBOXX-macOS-VST3.zip** is for MPC/other VST3 hosts and retains the VST3 local-build route.
 
-          New in 1.1.1: dark wood and gold panel styled after the supplied design, up/down sound browsing arrows immediately before the factory dropdown (with wraparound), Poly/Mono switch with last-note legato, spring-return ±2-semitone pitch wheel, and a hold-position modulation wheel for 5 Hz vibrato (up to ±0.5 semitone). Hardware MIDI pitch bend and CC1 are supported. The original synthesis controls and 100 factory patch definitions remain available. Mono uses one voice; switching back restores the chosen poly voice count. Live wheel positions are not saved into patches.
+          New in 1.2.0: a native AU instrument using the same editor and processor, with Apple auval and actual AU MIDI/audio/state/editor validation. The 1.1.1 features are retained: dark wood and gold panel styled after the supplied design, up/down sound browsing arrows immediately before the factory dropdown (with wraparound), Poly/Mono switch with last-note legato, spring-return ±2-semitone pitch wheel, and a hold-position modulation wheel for 5 Hz vibrato (up to ±0.5 semitone). Hardware MIDI pitch bend and CC1 are supported. The original synthesis controls and 100 factory patch definitions remain available. Mono uses one voice; switching back restores the chosen poly voice count. Live wheel positions are not saved into patches.
 
-          Universal arm64/x86_64, macOS 11+. CI passed engine/processor/VST3 scan/host tests, real standalone application launch with visible original editor and MIDI stereo rendering, Steinberg VST3 Validator and pluginval, installer/upgrade and quarantine/tamper rejection tests for both products, extracted-app startup, and the packaged local app build/install route. The existing factory timbres and controls are preserved, with the new vintage skin and performance controls. The attached BASSBOXX-interface.png is rendered from the real editor.
+          Universal arm64/x86_64, macOS 11+. CI passed engine/processor/VST3 scan/host tests, real standalone application launch with visible original editor and MIDI stereo rendering, Steinberg VST3 Validator and pluginval, installer/upgrade and quarantine/tamper rejection tests for both products, extracted-app startup, and the packaged local app build/install route. The AU also passed Apple's auval and pluginval after registry installation. The existing factory timbres and controls are preserved, with the new vintage skin and performance controls. The attached BASSBOXX-interface.png is rendered from the real editor.
 
-          Both downloads are ad-hoc signed development builds, not Developer ID signed/notarized. A standalone app does not fix Apple's distribution trust rejection. macOS may block the app/helper; if it does, stop and retain the exact message. No quarantine or security protections are removed or disabled. Live playback, hardware MIDI and policy behavior on your own Mac require local testing. MPC 3.10 compatibility remains unverified for the VST3; the standalone app does not use MPC.
+          All downloads are ad-hoc signed development builds, not Developer ID signed/notarized. A standalone app does not fix Apple's distribution trust rejection. macOS may block the app/helper; if it does, stop and retain the exact message. No quarantine or security protections are removed or disabled. Live playback, hardware MIDI and policy behavior on your own Mac require local testing. MPC 3.10 compatibility remains unverified for the VST3; the standalone app does not use MPC.
 
           Source commit: ${BUILD_SHA}
           EOF_NOTES

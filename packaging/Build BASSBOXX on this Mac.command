@@ -83,7 +83,15 @@ if [[ -d "$bundle/BASSBOXX.app" ]]; then
  echo "Build log: $work/Build.log"
  exit 0
 fi
-plugin="$work/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
+if [[ -d "$bundle/BASSBOXX.component" ]]; then
+ plugin="$work/build/BASSBOXX_artefacts/Release/AU/BASSBOXX.component"
+ name='BASSBOXX.component'
+ installed="${BASSBOXX_AU_DIR:-$HOME/Library/Audio/Plug-Ins/Components}/$name"
+else
+ plugin="$work/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
+ name='BASSBOXX.vst3'
+ installed="${BASSBOXX_PLUGIN_DIR:-$HOME/Library/Audio/Plug-Ins/VST3}/$name"
+fi
 /usr/bin/lipo "$plugin/Contents/MacOS/BASSBOXX" -verify_arch arm64 x86_64
 # Sign only the newly compiled local output, never the downloaded precompiled VST3.
 /usr/bin/codesign --force --sign - --timestamp=none "$plugin"
@@ -97,11 +105,17 @@ echo 'Local output was compiled here. An ad-hoc signature is not Developer ID or
 echo 'A distribution spctl assessment may still reject ad-hoc local code; no acceptance is claimed.'
 echo 'Checking actual local VST3 loading, not changing macOS assessment policy.'
 mkdir "$work/install-source"
-/usr/bin/ditto "$plugin" "$work/install-source/BASSBOXX.vst3"
+/usr/bin/ditto "$plugin" "$work/install-source/$name"
 cp "$bundle/Install BASSBOXX.command" "$work/install-source/Install BASSBOXX.command"
 # Calling the same installer preserves backup/upgrade behavior and its checks.
 /bin/bash "$work/install-source/Install BASSBOXX.command"
-installed="${BASSBOXX_PLUGIN_DIR:-$HOME/Library/Audio/Plug-Ins/VST3}/BASSBOXX.vst3"
+if [[ "$name" == BASSBOXX.component ]]; then
+ "$cmake" "-DPLUGIN=$installed" "-DHOST_CHECK=$work/build/au_host_smoke" -P "$work/source/tests/ValidateAU.cmake"
+ echo 'PASS: locally compiled, tested, installed and validated Audio Unit.'
+ echo "Build log: $work/Build.log"
+ echo 'Restart MPC, leave Use Audio Units checked, and choose Rescan All. MPC compatibility remains unverified.'
+ exit 0
+fi
 # CMake provides a bounded process runner without a Python/Homebrew dependency.
 cat > "$work/check-installed.cmake" <<'CMAKE'
 execute_process(COMMAND "${HOST_CHECK}" "${PLUGIN}" TIMEOUT 30 RESULT_VARIABLE result)

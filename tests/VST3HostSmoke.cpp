@@ -11,20 +11,26 @@ int main(int argc, char** argv)
     const auto start = std::chrono::steady_clock::now();
     auto phase = [&](const char* name) {
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
-        std::cout << "VST3 load check [" << elapsed << " ms]: " << name << std::endl;
+        std::cout << "plugin load check [" << elapsed << " ms]: " << name << std::endl;
     };
     phase("begin host GUI initialisation");
     juce::ScopedJuceInitialiser_GUI gui;
     phase("host GUI initialisation returned");
     const juce::String bundle = juce::String::fromUTF8(argv[1]);
-    if (!juce::File(bundle).isDirectory()) { std::cerr << "VST3 bundle missing\n"; return 2; }
+    if (!juce::File(bundle).isDirectory()) { std::cerr << "plugin bundle missing\n"; return 2; }
 
+   #if BASSBOXX_HOST_AU
+    juce::AudioUnitPluginFormat format;
+    const juce::String identifier = "AudioUnit:Synths/aumu,BsBx,PhZk";
+   #else
     juce::VST3PluginFormat format;
+    const juce::String identifier = bundle;
+   #endif
     juce::OwnedArray<juce::PluginDescription> descriptions;
     phase("begin factory discovery");
-    format.findAllTypesForFile(descriptions, bundle);
+    format.findAllTypesForFile(descriptions, identifier);
     phase("factory discovery returned");
-    if (descriptions.isEmpty()) { std::cerr << "FAIL: VST3 factory not discoverable\n"; return 1; }
+    if (descriptions.isEmpty()) { std::cerr << "FAIL: plugin factory not discoverable\n"; return 1; }
     for (auto* description : descriptions)
     {
         if (!description->isInstrument || !description->name.containsIgnoreCase("BASSBOXX"))
@@ -37,7 +43,7 @@ int main(int argc, char** argv)
         phase("begin instantiation");
         auto plugin = format.createInstanceFromDescription(*description, 48000.0, 256, error);
         phase("instantiation returned");
-        if (!plugin) { std::cerr << "FAIL: VST3 instance: " << error << "\n"; return 1; }
+        if (!plugin) { std::cerr << "FAIL: plugin instance: " << error << "\n"; return 1; }
         plugin->setPlayConfigDetails(0, 2, 48000.0, 256);
         plugin->prepareToPlay(48000.0, 256);
         juce::AudioBuffer<float> audio(2, 256);
@@ -57,11 +63,11 @@ int main(int argc, char** argv)
                     energy += std::abs(s);
                 }
         }
-        if (energy < 0.01) { std::cerr << "FAIL: VST3 produced silence\n"; return 1; }
+        if (energy < 0.01) { std::cerr << "FAIL: plugin produced silence\n"; return 1; }
         phase("MIDI audio rendered");
         juce::MemoryBlock state;
         plugin->getStateInformation(state);
-        if (state.isEmpty()) { std::cerr << "FAIL: empty VST3 state\n"; return 1; }
+        if (state.isEmpty()) { std::cerr << "FAIL: empty plugin state\n"; return 1; }
         plugin->setStateInformation(state.getData(), (int)state.getSize());
         phase("state restored; begin editor creation");
         if (!plugin->hasEditor()) { std::cerr << "FAIL: editor missing\n"; return 1; }
@@ -72,9 +78,9 @@ int main(int argc, char** argv)
         plugin->releaseResources();
         plugin.reset();
         phase("instance released");
-        std::cout << "PASS: real VST3 bundle discovery, instantiation, MIDI audio, state and editor\n";
+        std::cout << "PASS: real plugin bundle discovery, instantiation, MIDI audio, state and editor\n";
         return 0;
     }
-    std::cerr << "FAIL: BASSBOXX VST3 instrument not registered\n";
+    std::cerr << "FAIL: BASSBOXX plugin instrument not registered\n";
     return 1;
 }

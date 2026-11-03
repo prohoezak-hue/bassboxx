@@ -1,5 +1,24 @@
 # BASSBOXX macOS standalone and VST3 validation
 
+## 1.2.0 Audio Unit loading route
+
+The MPC screenshot showed Ignore/Skipped for both installed BASSBOXX VST3 paths,
+other visible VST3s ignored, and zero failed plugins. Use Audio Units was enabled.
+The screenshot alone does not prove the specific filtering/format-support cause.
+Add a native AU MusicDevice (aumu/BsBx/PhZk) using the unchanged shared processor
+and editor. The standalone and VST3 remain available. No security settings or
+quarantine metadata are changed. The AU installer backs up/replaces only the AU
+component in the user's Components directory.
+
+Mac checks now require universal AU compilation, signatures, extracted ZIP and
+payload integrity, installer upgrade/quarantine/tamper regressions, Apple registry
+discovery/auval, actual AU MIDI audio/state/editor hosting, and pluginval. Registry
+and host checks also exercise the AU freshly compiled from quarantined source.
+AU validations run after installation; pre-install CTest does not assume a globally
+registered component. The packaged AU builder validates after installing locally.
+The full existing standalone/VST3 regressions remain enabled. MPC itself remains
+a required user-Mac test; a format edition is not a compatibility certification.
+
 ## 1.1.1 reference skin and preset arrows
 
 The editor now uses a cached dark wood face, orange-brown wood cheeks, brass

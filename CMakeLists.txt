@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(BASSBOXX VERSION 1.1.1 LANGUAGES C CXX)
+project(BASSBOXX VERSION 1.2.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CTest)
@@ -25,7 +25,7 @@ else()
 endif()
 set(BASSBOXX_FORMATS)
 if(APPLE)
- set(BASSBOXX_FORMATS VST3 Standalone)
+ set(BASSBOXX_FORMATS VST3 AU Standalone)
 else()
  message(STATUS "Non-macOS: shared-code tests only; no instrument binary is produced")
 endif()
@@ -35,7 +35,8 @@ juce_add_plugin(BASSBOXX
  FORMATS ${BASSBOXX_FORMATS} PRODUCT_NAME "BASSBOXX"
  IS_SYNTH TRUE NEEDS_MIDI_INPUT TRUE NEEDS_MIDI_OUTPUT FALSE
  IS_MIDI_EFFECT FALSE EDITOR_WANTS_KEYBOARD_FOCUS FALSE
- COPY_PLUGIN_AFTER_BUILD FALSE VST3_CATEGORIES Instrument Synth)
+ COPY_PLUGIN_AFTER_BUILD FALSE VST3_CATEGORIES Instrument Synth
+ AU_MAIN_TYPE kAudioUnitType_MusicDevice)
 if(TARGET BASSBOXX_Standalone)
  target_sources(BASSBOXX_Standalone PRIVATE Source/Standalone.cpp)
  target_compile_definitions(BASSBOXX_Standalone PRIVATE JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
@@ -68,6 +69,12 @@ if(APPLE)
  target_compile_definitions(vst3_host_smoke PRIVATE JUCE_PLUGINHOST_VST3=1 JUCE_PLUGINHOST_AU=0 JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
  target_link_libraries(vst3_host_smoke PRIVATE juce::juce_audio_utils juce::juce_recommended_config_flags)
  add_dependencies(vst3_host_smoke BASSBOXX_VST3)
+ add_executable(au_host_smoke tests/VST3HostSmoke.cpp)
+ target_compile_definitions(au_host_smoke PRIVATE BASSBOXX_HOST_AU=1 JUCE_PLUGINHOST_VST3=0 JUCE_PLUGINHOST_AU=1 JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+ target_link_libraries(au_host_smoke PRIVATE juce::juce_audio_utils juce::juce_recommended_config_flags)
+ add_dependencies(au_host_smoke BASSBOXX_AU)
+ # AU discovery uses the macOS registry. Test it after installation in packaging,
+ # not in CTest, which also runs before a local build has been installed.
  add_test(NAME vst3_host_load COMMAND vst3_host_smoke "$<TARGET_BUNDLE_DIR:BASSBOXX_VST3>")
  add_test(NAME vst3_scan COMMAND vst3_host_smoke "$<TARGET_BUNDLE_DIR:BASSBOXX_VST3>" --scan-only)
  set_tests_properties(vst3_host_load vst3_scan PROPERTIES TIMEOUT 30)

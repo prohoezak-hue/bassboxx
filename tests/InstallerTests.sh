@@ -7,11 +7,12 @@ name="${3:-BASSBOXX.vst3}"
 mkdir -p "$root"
 export BASSBOXX_PLUGIN_DIR="$root/installed"
 export BASSBOXX_APP_DIR="$root/installed"
+export BASSBOXX_AU_DIR="$root/installed"
 export BASSBOXX_BACKUP_DIR="$root/backups"
 installer="$bundle/Install BASSBOXX.command"
 /bin/bash "$installer"
 /bin/bash "$installer"
-[[ "$(find "$BASSBOXX_BACKUP_DIR" -type d \( -name '*.vst3' -o -name '*.app' \) -prune | wc -l | tr -d ' ')" == 1 ]]
+[[ "$(find "$BASSBOXX_BACKUP_DIR" -type d \( -name '*.vst3' -o -name '*.app' -o -name '*.component' \) -prune | wc -l | tr -d ' ')" == 1 ]]
 before="$(shasum -a 256 "$BASSBOXX_PLUGIN_DIR/$name/Contents/MacOS/BASSBOXX")"
 for location in root nested; do
  candidate="$root/quarantined-$location"
@@ -28,7 +29,7 @@ for location in root nested; do
  grep -F 'Installation stopped: macOS did not accept this quarantined bundle.' "$root/quarantine-$location.log"
  xattr -p com.apple.quarantine "$target" >/dev/null
  [[ "$before" == "$(shasum -a 256 "$BASSBOXX_PLUGIN_DIR/$name/Contents/MacOS/BASSBOXX")" ]]
- [[ "$(find "$BASSBOXX_BACKUP_DIR" -type d \( -name '*.vst3' -o -name '*.app' \) -prune | wc -l | tr -d ' ')" == 1 ]]
+ [[ "$(find "$BASSBOXX_BACKUP_DIR" -type d \( -name '*.vst3' -o -name '*.app' -o -name '*.component' \) -prune | wc -l | tr -d ' ')" == 1 ]]
 done
 mkdir "$root/tampered"
 ditto "$bundle/$name" "$root/tampered/$name"

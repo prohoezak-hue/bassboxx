@@ -9,7 +9,10 @@ if [[ "$(uname -s)" != Darwin ]]; then
 fi
 name='BASSBOXX.vst3'
 install_dir="${BASSBOXX_PLUGIN_DIR:-$HOME/Library/Audio/Plug-Ins/VST3}"
-if [[ -d "$PWD/BASSBOXX.app" ]]; then
+if [[ -d "$PWD/BASSBOXX.component" ]]; then
+ name='BASSBOXX.component'
+ install_dir="${BASSBOXX_AU_DIR:-$HOME/Library/Audio/Plug-Ins/Components}"
+elif [[ -d "$PWD/BASSBOXX.app" ]]; then
  name='BASSBOXX.app'
  install_dir="${BASSBOXX_APP_DIR:-$HOME/Applications}"
 fi
@@ -60,6 +63,9 @@ printf '\nBASSBOXX files installed and signature verified.\n'
 printf 'Install location: %s/%s\n' "$install_dir" "$name"
 if [[ "$name" == BASSBOXX.app ]]; then
  echo 'Open BASSBOXX.app from your Applications folder. Choose Options > Audio/MIDI Settings for your output and controller.'
+elif [[ "$name" == BASSBOXX.component ]]; then
+ echo 'Restart MPC, keep Use Audio Units checked, and choose Rescan All.'
+ echo 'Look for BASSBOXX as an AU instrument. MPC loading still needs local verification.'
 else
  echo 'Restart MPC desktop and rescan this VST3 folder. MPC 3.10 compatibility is not yet verified.'
 fi
