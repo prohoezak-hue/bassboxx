@@ -61,7 +61,9 @@ BassboxxProcessor::BassboxxProcessor()
         "filterAttack", "filterDecay", "filterSustain", "filterRelease"})
     values[index++] = state.getRawParameterValue(id);
   setCurrentProgram(0);
+  state.addParameterListener("voices", this);
 }
+BassboxxProcessor::~BassboxxProcessor() { state.removeParameterListener("voices", this); }
 bool BassboxxProcessor::isBusesLayoutSupported(const BusesLayout &b) const {
   return b.getMainInputChannelSet().isDisabled() &&
          (b.getMainOutputChannelSet() == AudioChannelSet::stereo() ||
@@ -70,6 +72,26 @@ bool BassboxxProcessor::isBusesLayoutSupported(const BusesLayout &b) const {
 void BassboxxProcessor::prepareToPlay(double sr, int) {
   engine.prepare(sr);
   keyboard.reset();
+  pendingPitch.store(-1); pendingMod.store(-1);
+  pitchPosition.store(0); modPosition.store(0);
+}
+void BassboxxProcessor::setMonophonic(bool mono) {
+  auto *parameter = state.getParameter("voices");
+  const int current = int(values[19]->load());
+  if (mono && current > 1) polyVoices.store(current);
+  parameter->beginChangeGesture();
+  parameter->setValueNotifyingHost(parameter->convertTo0to1(float(mono ? 1 : jlimit(2, 16, polyVoices.load()))));
+  parameter->endChangeGesture();
+}
+void BassboxxProcessor::setPitchWheel(float value) {
+  value = std::isfinite(value) ? jlimit(-1.0f, 1.0f, value) : 0;
+  pitchPosition.store(value);
+  pendingPitch.store(8192 + roundToInt(value * (value >= 0 ? 8191 : 8192)));
+}
+void BassboxxProcessor::setModWheel(float value) {
+  value = std::isfinite(value) ? jlimit(0.0f, 1.0f, value) : 0;
+  modPosition.store(value);
+  pendingMod.store(roundToInt(value * 127));
 }
 void BassboxxProcessor::readPatch() {
   auto get = [&](int i) { return values[size_t(i)]->load(); };
@@ -101,8 +123,15 @@ void BassboxxProcessor::midi(const MidiMessage &m) {
     engine.noteOn(m.getNoteNumber(), m.getFloatVelocity(), c);
   else if (m.isNoteOff())
     engine.noteOff(m.getNoteNumber(), c);
-  else if (m.isPitchWheel())
+  else if (m.isPitchWheel()) {
     engine.bend((m.getPitchWheelValue() - 8192) / 8192.0f * 2, c);
+    const int delta = m.getPitchWheelValue() - 8192;
+    pitchPosition.store(delta / float(delta >= 0 ? 8191 : 8192));
+  }
+  else if (m.isController() && m.getControllerNumber() == 1) {
+    engine.modulate(m.getControllerValue() / 127.0f, c);
+    modPosition.store(m.getControllerValue() / 127.0f);
+  }
   else if (m.isController() && m.getControllerNumber() == 64)
     engine.sustain(m.getControllerValue() >= 64, c);
   else if (m.isAllNotesOff() || m.isAllSoundOff())
@@ -116,6 +145,12 @@ void BassboxxProcessor::processBlock(AudioBuffer<float> &b,
   readPatch();
   if (panicRequested.exchange(false))
     engine.allOff();
+  // UI wheels address the whole instrument; incoming MIDI remains per-channel.
+  const int pitch = pendingPitch.exchange(-1), modulation = pendingMod.exchange(-1);
+  for (int channel = 1; channel <= 16; ++channel) {
+    if (pitch >= 0) midi(MidiMessage::pitchWheel(channel, pitch));
+    if (modulation >= 0) midi(MidiMessage::controllerEvent(channel, 1, modulation));
+  }
   int pos = 0;
   auto render = [&](int end) {
     for (; pos < end; ++pos) {
@@ -170,6 +205,8 @@ void BassboxxProcessor::setCurrentProgram(int index) {
 void BassboxxProcessor::getStateInformation(MemoryBlock &dest) {
   auto tree = state.copyState();
   tree.setProperty("program", program.load(), nullptr);
+  const int count = int(values[19]->load());
+  tree.setProperty("polyVoices", count > 1 ? count : polyVoices.load(), nullptr);
   if (auto xml = tree.createXml())
     copyXmlToBinary(*xml, dest);
 }
@@ -178,6 +215,7 @@ void BassboxxProcessor::setStateInformation(const void *data, int size) {
     auto tree = ValueTree::fromXml(*xml);
     if (tree.hasType("BASSBOXX")) {
       program = jlimit(0, 99, int(tree.getProperty("program", 0)));
+      polyVoices.store(jlimit(2, 16, int(tree.getProperty("polyVoices", 8))));
       state.replaceState(tree);
     }
   }

@@ -12,6 +12,29 @@ The app preserves the original panel, synthesizer, 100 presets and patch-file co
 
 The separate **BASSBOXX-macOS-VST3.zip** is still available for music hosts. [Build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Validation](VALIDATION.md)
 
+## Vintage panel and performance controls (1.1.0)
+
+The panel now uses a Model D-inspired charcoal face, cream section markings,
+silver-trimmed black knobs and walnut-style cheeks, with BASSBOXX branding.
+This is a visual style; the synthesizer is not a measured Model D circuit emulation.
+All 21 existing synthesis controls, four oscillator waveforms and 100 factory
+patch definitions remain available.
+
+- **POLY / MONO:** switches the existing Voices setting between one voice and your
+  previous polyphonic count (2–16). Mono uses last-note priority and legato: release
+  the newest key to return to a still-held older key. Glide and sustain work in
+  mono. The mode is saved with patches/projects; old Voices=1 patches show Mono.
+- **PITCH wheel:** bends all voices by approximately ±2 semitones and springs to
+  centre on mouse/key release. Double-click also returns to centre.
+- **MOD wheel:** adds free-running 5 Hz pitch vibrato, up to ±0.5 semitone. It holds
+  its position on release; double-click returns to zero. MIDI CC1 controls the same
+  modulation per MIDI channel; hardware pitch bend remains per-channel too.
+
+The screen wheels are live performance controls, not saved patch parameters.
+Factory patch selection keeps its original voice count and updates the mode
+switch. With modulation at zero, the existing oscillator/filter/envelope sound
+is unchanged. Mono overlap/held-note performance is intentionally improved.
+
 ## Standalone installation
 
 1. Download and extract **BASSBOXX-macOS-Standalone.zip**.
@@ -47,12 +70,12 @@ Inside MPC on your Mac, check initial scan/retry, live MIDI and audio, all facto
 
 - Three mixed oscillators: band-limited polyBLEP saw/pulse, triangle and sine; level and ±24-semitone fine/interval tuning per oscillator. Triangle is analytic rather than fully band-limited, so extreme notes can alias.
 - Driven two-pole TPT resonant low-pass; cutoff, resonance and envelope modulation. Independent amplitude and filter ADSR contours.
-- Independent amplitude/filter attack, decay, sustain, release; exponential frequency glide; 1–16 voices with oldest-voice stealing. Mono mode glides from the previous voice; it does not implement a held-note priority stack.
+- Independent amplitude/filter attack, decay, sustain, release; exponential frequency glide; 1–16 voices with oldest-voice stealing. Mono mode uses last-note priority with a held-key return stack and legato; glide uses the previous voice frequency.
 - Bass Boost adds a 160 Hz low-pass component before soft saturation; output gain and soft limiting bound the output. This is a virtual analog design, not a measured emulation of a particular hardware synth.
 - Sample-position MIDI note events, velocity, per-channel sustain and pitch bend, all-notes/all-sound-off, plus on-screen keyboard. Audio is dual mono. No external audio input.
 - 100 deterministically generated factory programs: ten variations in each of Foundation, Glide, Acid, Pluck, Sub, Fifth, Atmosphere, Vintage, Lead and Impact. These are starting patches, not a separately auditioned commercial sound library.
 - Host automation for all synthesis parameters; host state stores parameter values and factory program index. Save/load custom `.bassboxx` files using the editor buttons. Factory programs remain immutable. Imported custom patches retain their saved program index but the parameter state is authoritative.
-- Metallic red procedural panel, wood-grain side cheeks, black rotary knobs and ProHoeZak branding. No external image assets are required.
+- Model D-inspired charcoal procedural panel, wood-grain side cheeks, silver-trimmed black rotary knobs and ProHoeZak branding. No external image assets are required.
 
 ## Automated builds and development
 

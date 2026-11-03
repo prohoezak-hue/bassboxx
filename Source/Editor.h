@@ -2,47 +2,107 @@
 #include "Plugin.h"
 class VintageLook final : public juce::LookAndFeel_V4 {
 public:
+  VintageLook() {
+    const juce::Colour cream(0xffe8e3cc), black(0xff151715);
+    setColour(juce::Slider::textBoxTextColourId, cream);
+    setColour(juce::Slider::textBoxBackgroundColourId, black);
+    setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    setColour(juce::ComboBox::backgroundColourId, black);
+    setColour(juce::ComboBox::textColourId, cream);
+    setColour(juce::ComboBox::outlineColourId, juce::Colour(0xff77796d));
+    setColour(juce::TextButton::buttonColourId, juce::Colour(0xff333732));
+    setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xffa3492c));
+    setColour(juce::TextButton::textColourOffId, cream);
+    setColour(juce::TextButton::textColourOnId, cream);
+  }
   void drawRotarySlider(juce::Graphics &g, int x, int y, int w, int h,
-                        float pos, float start, float end,
-                        juce::Slider &) override {
-    auto r = juce::Rectangle<float>(float(x), float(y), float(w), float(h))
-                 .reduced(5);
-    float d = juce::jmin(r.getWidth(), r.getHeight());
-    r = r.withSizeKeepingCentre(d, d);
-    g.setColour(juce::Colours::black.withAlpha(.5f));
-    g.fillEllipse(r.translated(2, 3));
-    juce::ColourGradient grad(juce::Colour(0xff454545), r.getX(), r.getY(),
-                              juce::Colour(0xff080808), r.getRight(),
-                              r.getBottom(), false);
-    g.setGradientFill(grad);
-    g.fillEllipse(r);
-    g.setColour(juce::Colour(0xff777777));
-    g.drawEllipse(r, 1);
-    auto c = r.getCentre();
-    float a = start + pos * (end - start);
-    g.setColour(juce::Colour(0xffffd7a0));
-    g.drawLine(c.x + std::sin(a) * d * .2f, c.y - std::cos(a) * d * .2f,
-               c.x + std::sin(a) * d * .42f, c.y - std::cos(a) * d * .42f,
-               2.5f);
+                        float pos, float start, float end, juce::Slider &) override {
+    auto area = juce::Rectangle<float>(float(x), float(y), float(w), float(h)).reduced(5);
+    const float d = juce::jmin(area.getWidth(), area.getHeight());
+    area = area.withSizeKeepingCentre(d, d);
+    const auto centre = area.getCentre();
+    g.setColour(juce::Colour(0xffd4d1bb));
+    for (int tick = 0; tick <= 10; ++tick) {
+      const float a = start + (end - start) * float(tick) / 10;
+      g.drawLine(centre.x + std::sin(a) * d * .45f, centre.y - std::cos(a) * d * .45f,
+                 centre.x + std::sin(a) * d * .5f, centre.y - std::cos(a) * d * .5f, 1);
+    }
+    auto rim = area.reduced(7);
+    g.setColour(juce::Colours::black.withAlpha(.7f));
+    g.fillEllipse(rim.translated(2, 3));
+    g.setGradientFill(juce::ColourGradient(juce::Colour(0xffd1d2cc), rim.getX(), rim.getY(),
+                                          juce::Colour(0xff5a5e58), rim.getRight(), rim.getBottom(), false));
+    g.fillEllipse(rim);
+    auto knob = rim.reduced(3);
+    g.setGradientFill(juce::ColourGradient(juce::Colour(0xff343832), knob.getX(), knob.getY(),
+                                          juce::Colour(0xff090b09), knob.getRight(), knob.getBottom(), false));
+    g.fillEllipse(knob);
+    g.setColour(juce::Colour(0xff565a51));
+    for (int i = 0; i < 28; ++i) {
+      const float a = float(i) * juce::MathConstants<float>::twoPi / 28;
+      const float radius = knob.getWidth() * .5f;
+      g.drawLine(centre.x + std::sin(a) * radius * .85f, centre.y - std::cos(a) * radius * .85f,
+                 centre.x + std::sin(a) * radius, centre.y - std::cos(a) * radius, .6f);
+    }
+    const float angle = start + pos * (end - start);
+    g.setColour(juce::Colour(0xfff4f0d8));
+    g.drawLine(centre.x + std::sin(angle) * d * .09f, centre.y - std::cos(angle) * d * .09f,
+               centre.x + std::sin(angle) * d * .31f, centre.y - std::cos(angle) * d * .31f, 2.4f);
+  }
+  void drawLinearSlider(juce::Graphics &g, int x, int y, int w, int h, float position,
+                        float, float, juce::Slider::SliderStyle, juce::Slider &slider) override {
+    auto trough = juce::Rectangle<float>(float(x + 8), float(y), float(w - 16), float(h));
+    g.setColour(juce::Colour(0xff070807));
+    g.fillRoundedRectangle(trough, 5);
+    g.setColour(juce::Colour(0xff717468));
+    g.drawRoundedRectangle(trough, 5, 1);
+    auto rubber = trough.reduced(5, 3);
+    g.setGradientFill(juce::ColourGradient(juce::Colour(0xff161916), rubber.getX(), rubber.getY(),
+                                          juce::Colour(0xff484c43), rubber.getCentreX(), rubber.getY(), false));
+    g.fillRoundedRectangle(rubber, 3);
+    for (int i = 0; i < h; i += 7) {
+      g.setColour(juce::Colour(0xff090b09));
+      g.drawHorizontalLine(y + i, rubber.getX(), rubber.getRight());
+      g.setColour(juce::Colour(0xff606459).withAlpha(.45f));
+      g.drawHorizontalLine(y + i + 1, rubber.getX(), rubber.getRight());
+    }
+    const float marker = juce::jlimit(trough.getY() + 4, trough.getBottom() - 4, position);
+    g.setColour(juce::Colour(0xffece5cc));
+    g.fillRoundedRectangle(rubber.getX(), marker - 2, rubber.getWidth(), 4, 1);
+    if (slider.getComponentID() == "pitch-wheel") {
+      g.setColour(juce::Colour(0xffce7d43));
+      g.drawLine(trough.getX() - 5, trough.getCentreY(), trough.getX(), trough.getCentreY(), 2);
+      g.drawLine(trough.getRight(), trough.getCentreY(), trough.getRight() + 5, trough.getCentreY(), 2);
+    }
   }
 };
-class BassboxxEditor final : public juce::AudioProcessorEditor,
-                             private juce::Timer {
+class PerformanceWheel final : public juce::Slider {
+public:
+  explicit PerformanceWheel(bool spring) : juce::Slider(juce::Slider::LinearVertical, juce::Slider::NoTextBox), springBack(spring) {
+    setDoubleClickReturnValue(true, 0);
+    if (springBack) onDragEnd = [this] { setValue(0, juce::sendNotificationSync); };
+  }
+  bool keyStateChanged(bool down) override {
+    const bool handled = juce::Slider::keyStateChanged(down);
+    if (springBack && !down) { setValue(0, juce::sendNotificationSync); return true; }
+    return handled;
+  }
+private:
+  bool springBack;
+};
+class BassboxxEditor final : public juce::AudioProcessorEditor, private juce::Timer {
   BassboxxProcessor &processor;
   VintageLook look;
   juce::MidiKeyboardComponent keys;
   juce::ComboBox presets;
-  juce::TextButton save{"Save patch"}, load{"Load patch"}, panic{"Panic"};
+  juce::TextButton save{"Save patch"}, load{"Load patch"}, panic{"Panic"}, mode{"POLY"};
+  PerformanceWheel pitchWheel{true}, modWheel{false};
   std::unique_ptr<juce::FileChooser> chooser;
   std::vector<std::unique_ptr<juce::Slider>> knobs;
   std::vector<std::unique_ptr<juce::Label>> labels;
-  std::vector<
-      std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>>
-      attachments;
+  std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> attachments;
   std::array<juce::ComboBox, 3> waves;
-  std::vector<
-      std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>>
-      waveAttachments;
+  std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>> waveAttachments;
   void file(bool writing) {
     chooser = std::make_unique<juce::FileChooser>(
         writing ? "Save BASSBOXX patch" : "Load BASSBOXX patch", juce::File{},
@@ -73,143 +133,157 @@ class BassboxxEditor final : public juce::AudioProcessorEditor,
         });
   }
 
-  void timerCallback() override {
-    presets.setSelectedId(processor.getCurrentProgram() + 1,
-                          juce::dontSendNotification);
-  }
 
+  void timerCallback() override {
+    presets.setSelectedId(processor.getCurrentProgram() + 1, juce::dontSendNotification);
+    const bool mono = processor.isMonophonic();
+    const bool changed = mode.getToggleState() != mono;
+    mode.setToggleState(mono, juce::dontSendNotification);
+    mode.setButtonText(mono ? "MONO" : "POLY");
+    if (changed) repaint(903, 520, 146, 20);
+    if (!pitchWheel.isMouseButtonDown()) pitchWheel.setValue(processor.getPitchWheel(), juce::dontSendNotification);
+    if (!modWheel.isMouseButtonDown()) modWheel.setValue(processor.getModWheel(), juce::dontSendNotification);
+  }
 public:
   explicit BassboxxEditor(BassboxxProcessor &p)
-      : AudioProcessorEditor(p), processor(p),
-        keys(p.keyboard, juce::MidiKeyboardComponent::horizontalKeyboard) {
+      : AudioProcessorEditor(p), processor(p), keys(p.keyboard, juce::MidiKeyboardComponent::horizontalKeyboard) {
     setLookAndFeel(&look);
-    startTimerHz(5);
     addAndMakeVisible(keys);
+    keys.setColour(juce::MidiKeyboardComponent::whiteNoteColourId, juce::Colour(0xffebe5d2));
+    keys.setColour(juce::MidiKeyboardComponent::blackNoteColourId, juce::Colour(0xff121512));
     keys.setAvailableRange(48, 83);
     keys.setLowestVisibleKey(48);
     keys.setScrollButtonsVisible(false);
-    keys.setKeyWidth(juce::jmax(20.0f, 1004.0f / 21));
+    keys.setKeyWidth(850.0f / 21);
     addAndMakeVisible(presets);
-    for (int i = 0; i < 100; ++i)
-      presets.addItem(p.getProgramName(i), i + 1);
-    presets.setSelectedId(p.getCurrentProgram() + 1,
-                          juce::dontSendNotification);
-    presets.onChange = [this] {
-      processor.setCurrentProgram(presets.getSelectedId() - 1);
-    };
-    for (auto *b : {&save, &load, &panic})
-      addAndMakeVisible(b);
+    for (int i = 0; i < 100; ++i) presets.addItem(p.getProgramName(i), i + 1);
+    presets.setSelectedId(p.getCurrentProgram() + 1, juce::dontSendNotification);
+    presets.onChange = [this] { processor.setCurrentProgram(presets.getSelectedId() - 1); };
+    for (auto *button : {&save, &load, &panic, &mode}) addAndMakeVisible(button);
     save.onClick = [this] { file(true); };
     load.onClick = [this] { file(false); };
     panic.onClick = [this] {
       processor.panicRequested.store(true);
-      for (int c = 1; c <= 16; ++c)
-        processor.keyboard.allNotesOff(c);
+      for (int channel = 1; channel <= 16; ++channel) processor.keyboard.allNotesOff(channel);
     };
+    mode.setComponentID("voice-mode");
+    mode.setClickingTogglesState(true);
+    mode.setTooltip("Mono: one voice, last-note priority and legato. Poly: restores your polyphonic voice count.");
+    mode.onClick = [this] { processor.setMonophonic(mode.getToggleState()); repaint(903, 520, 146, 20); };
+    pitchWheel.setComponentID("pitch-wheel");
+    modWheel.setComponentID("mod-wheel");
+    pitchWheel.setName("Pitch bend"); modWheel.setName("Modulation");
+    pitchWheel.setRange(-1, 1); modWheel.setRange(0, 1, 1.0 / 127);
+    pitchWheel.setTooltip("Pitch bend for all voices: ±2 semitones. Springs back to centre on release.");
+    modWheel.setTooltip("Vibrato for all voices: 5 Hz, up to ±0.5 semitone. Stays where you leave it. MIDI CC1 supported.");
+    pitchWheel.onValueChange = [this] { processor.setPitchWheel(float(pitchWheel.getValue())); };
+    modWheel.onValueChange = [this] { processor.setModWheel(float(modWheel.getValue())); };
+    addAndMakeVisible(pitchWheel); addAndMakeVisible(modWheel);
     auto knob = [&](juce::String id, juce::String name) {
-      auto s = std::make_unique<juce::Slider>();
-      s->setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-      s->setTextBoxStyle(juce::Slider::TextBoxBelow, false, 78, 18);
-      s->setColour(juce::Slider::textBoxTextColourId, juce::Colours::ivory);
-      s->setColour(juce::Slider::textBoxOutlineColourId,
-                   juce::Colours::transparentBlack);
-      addAndMakeVisible(*s);
-      auto l = std::make_unique<juce::Label>();
-      l->setText(name, juce::dontSendNotification);
-      l->setJustificationType(juce::Justification::centred);
-      l->setColour(juce::Label::textColourId, juce::Colours::ivory);
-      addAndMakeVisible(*l);
-      attachments.push_back(
-          std::make_unique<
-              juce::AudioProcessorValueTreeState::SliderAttachment>(p.state, id,
-                                                                    *s));
-      knobs.push_back(std::move(s));
-      labels.push_back(std::move(l));
+      auto slider = std::make_unique<juce::Slider>();
+      slider->setComponentID(id);
+      slider->setName(name);
+      slider->setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+      slider->setTextBoxStyle(juce::Slider::TextBoxBelow, false, 66, 18);
+      addAndMakeVisible(*slider);
+      auto label = std::make_unique<juce::Label>();
+      label->setText(name, juce::dontSendNotification);
+      label->setJustificationType(juce::Justification::centred);
+      label->setFont(juce::Font(juce::FontOptions(11.0f)));
+      label->setColour(juce::Label::textColourId, juce::Colour(0xffe8e3cc));
+      addAndMakeVisible(*label);
+      attachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(p.state, id, *slider));
+      knobs.push_back(std::move(slider)); labels.push_back(std::move(label));
     };
     for (int i = 0; i < 3; ++i) {
-      auto n = juce::String(i + 1);
+      const auto n = juce::String(i + 1);
       knob("level" + n, "OSC " + n + " LEVEL");
-      knob("tune" + n, "TUNE (st)");
-      addAndMakeVisible(waves[i]);
-      waves[i].addItemList({"Saw", "Pulse", "Triangle", "Sine"}, 1);
-      waveAttachments.push_back(
-          std::make_unique<
-              juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
-              p.state, "wave" + n, waves[i]));
+      knob("tune" + n, "FREQUENCY");
+      addAndMakeVisible(waves[size_t(i)]);
+      waves[size_t(i)].addItemList({"Saw", "Pulse", "Triangle", "Sine"}, 1);
+      waveAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(p.state, "wave" + n, waves[size_t(i)]));
     }
-    for (auto pair :
-         std::initializer_list<std::pair<const char *, const char *>>{
-             {"cutoff", "CUTOFF"},
-             {"resonance", "RESONANCE"},
-             {"env", "FILTER ENV"},
-             {"attack", "ATTACK"},
-             {"decay", "DECAY"},
-             {"sustain", "SUSTAIN"},
-             {"release", "RELEASE"},
-             {"glide", "GLIDE"},
-             {"voices", "VOICES"},
-             {"boost", "BASS BOOST"},
-             {"gain", "OUTPUT"},
-             {"filterAttack", "FILTER ATT"},
-             {"filterDecay", "FILTER DEC"},
-             {"filterSustain", "FILTER SUS"},
-             {"filterRelease", "FILTER REL"}})
+    for (auto pair : std::initializer_list<std::pair<const char *, const char *>>{
+      {"cutoff", "CUTOFF"}, {"resonance", "EMPHASIS"}, {"env", "CONTOUR AMOUNT"},
+      {"attack", "ATTACK"}, {"decay", "DECAY"}, {"sustain", "SUSTAIN"}, {"release", "RELEASE"},
+      {"glide", "GLIDE"}, {"voices", "VOICES"}, {"boost", "BASS BOOST"}, {"gain", "VOLUME"},
+      {"filterAttack", "ATTACK"}, {"filterDecay", "DECAY"}, {"filterSustain", "SUSTAIN"}, {"filterRelease", "RELEASE"}})
       knob(pair.first, pair.second);
     setSize(1100, 800);
+    timerCallback();
+    startTimerHz(20);
   }
   ~BassboxxEditor() override {
     stopTimer();
+    if (pitchWheel.isMouseButtonDown()) processor.setPitchWheel(0);
     setLookAndFeel(nullptr);
   }
   void resized() override {
-    presets.setBounds(400, 24, 300, 28);
-    save.setBounds(710, 24, 110, 28);
-    load.setBounds(825, 24, 110, 28);
-    panic.setBounds(940, 24, 100, 28);
-    for (int i = 0; i < int(knobs.size()); ++i) {
-      int col = i < 6 ? i : i < 17 ? i - 6 : i - 17;
-      int row = i < 6 ? 0 : i < 17 ? 1 : 2;
-      int x = 48 + col * (row ? 91 : 155);
-      int y = row == 0 ? 135 : row == 1 ? 335 : 480;
-      knobs[i]->setBounds(x, y, 86, 105);
-      labels[i]->setBounds(x - 5, y - 24, 96, 23);
+    presets.setBounds(420, 24, 280, 28);
+    save.setBounds(711, 24, 108, 28); load.setBounds(828, 24, 108, 28); panic.setBounds(945, 24, 108, 28);
+    const std::array<juce::Rectangle<int>, 21> bounds{{
+      {450,150,82,100}, {100,150,82,100}, {450,300,82,100}, {100,300,82,100}, {450,450,82,100}, {100,450,82,100},
+      {568,150,92,100}, {672,150,92,100}, {776,150,92,100},
+      {566,450,74,100}, {646,450,74,100}, {726,450,74,100}, {806,450,74,100},
+      {902,300,72,100}, {980,300,72,100}, {980,150,72,100}, {902,150,72,100},
+      {566,300,74,100}, {646,300,74,100}, {726,300,74,100}, {806,300,74,100}}};
+    for (size_t i = 0; i < knobs.size(); ++i) {
+      knobs[i]->setBounds(bounds[i]);
+      labels[i]->setBounds(bounds[i].getX() - 9, bounds[i].getY() - 21, bounds[i].getWidth() + 18, 20);
     }
-    for (int i = 0; i < 3; ++i)
-      waves[i].setBounds(55 + i * 310, 255, 220, 26);
-    keys.setBounds(48, 645, 1004, 135);
+    for (int i = 0; i < 3; ++i) waves[size_t(i)].setBounds(208, 190 + i * 150, 194, 28);
+    mode.setBounds(912, 475, 130, 34);
+    pitchWheel.setBounds(48, 648, 55, 130); modWheel.setBounds(118, 648, 55, 130);
+    keys.setBounds(202, 645, 850, 135);
   }
   void paint(juce::Graphics &g) override {
-    g.fillAll(juce::Colour(0xff331b10));
-    for (int x = 0; x < 1100; ++x) {
-      if (x > 30 && x < 1070)
-        continue;
-      g.setColour(
-          juce::Colour(0xffa26332).withAlpha(.25f + .15f * std::sin(x * 1.7f)));
-      g.drawVerticalLine(x, 0, 800);
+    g.fillAll(juce::Colour(0xff694128));
+    for (int x = 0; x < getWidth(); ++x) {
+      if (x >= 31 && x < getWidth() - 31) continue;
+      g.setColour(juce::Colour(0xffc59460).withAlpha(.1f + .1f * std::sin(float(x) * 1.5f)));
+      g.drawVerticalLine(x, 0, float(getHeight()));
     }
-    g.setGradientFill(juce::ColourGradient(juce::Colour(0xffb63438), 30, 0,
-                                           juce::Colour(0xff46080c), 1070, 800,
-                                           false));
-    g.fillRect(30, 0, 1040, 800);
-    for (int y = 0; y < 800; y += 3) {
-      g.setColour(juce::Colours::white.withAlpha(.025f));
-      g.drawHorizontalLine(y, 30, 1070);
+    g.setGradientFill(juce::ColourGradient(juce::Colour(0xff2b2f29), 31, 0,
+                                          juce::Colour(0xff101310), 1069, 800, false));
+    g.fillRect(31, 0, 1038, 800);
+    const juce::Colour cream(0xffe8e3cc);
+    g.setColour(cream); g.setFont(30);
+    g.drawText("BASSBOXX", 49, 17, 300, 37, juce::Justification::centredLeft);
+    g.setFont(13);
+    g.drawText("by ProHoeZak", 51, 58, 250, 20, juce::Justification::centredLeft);
+    g.setColour(juce::Colour(0xffd48244)); g.fillEllipse(329, 34, 8, 8);
+    g.setColour(cream); g.setFont(10);
+    g.drawText("POWER", 315, 48, 42, 16, juce::Justification::centred);
+    auto section = [&](juce::Rectangle<int> r, const juce::String &name) {
+      g.setColour(cream.withAlpha(.65f)); g.drawRoundedRectangle(r.toFloat(), 3, 1);
+      g.setColour(juce::Colour(0xff20251f)); g.fillRect(r.getX() + 12, r.getY() - 8, r.getWidth() - 24, 17);
+      g.setColour(cream); g.setFont(13);
+      g.drawText(name, r.getX() + 8, r.getY() - 10, r.getWidth() - 16, 20, juce::Justification::centred);
+    };
+    section({44, 107, 378, 478}, "OSCILLATOR BANK");
+    section({432, 107, 118, 478}, "MIXER");
+    section({560, 107, 326, 478}, "MODIFIERS");
+    section({896, 107, 159, 478}, "OUTPUT");
+    g.setFont(12); g.setColour(cream);
+    for (int i = 0; i < 3; ++i) {
+      g.drawText("OSCILLATOR " + juce::String(i + 1), 207, 140 + 150 * i, 194, 22, juce::Justification::centred);
+      g.setFont(10); g.drawText("WAVEFORM", 208, 168 + 150 * i, 194, 18, juce::Justification::centred); g.setFont(12);
+      g.drawText("-24              0              +24", 78, 250 + 150 * i, 122, 17, juce::Justification::centred);
     }
-    g.setColour(juce::Colours::ivory);
-    g.setFont(32);
-    g.drawText("BASSBOXX", 52, 16, 300, 40, juce::Justification::centredLeft);
-    g.setFont(15);
-    g.drawText("by ProHoeZak", 54, 56, 280, 25,
-               juce::Justification::centredLeft);
-    g.setFont(14);
-    g.drawText("THREE OSCILLATOR VIRTUAL ANALOG SYNTHESIZER", 52, 606, 900, 25,
-               juce::Justification::centredLeft);
-    for (int x : {39, 1061})
-      for (int y : {10, 790}) {
-        g.setColour(juce::Colours::silver);
-        g.fillEllipse(float(x - 3), float(y - 3), 6, 6);
-        g.setColour(juce::Colours::black);
-        g.drawLine(float(x - 2), float(y), float(x + 2), float(y));
-      }
+    g.drawText("FILTER CONTOUR", 570, 260, 305, 16, juce::Justification::centred);
+    g.drawText("LOUDNESS CONTOUR", 570, 410, 305, 16, juce::Justification::centred);
+    g.drawText("VOICE MODE", 905, 443, 142, 22, juce::Justification::centred);
+    g.setFont(10);
+    g.drawText(processor.isMonophonic() ? "LAST NOTE / LEGATO" : "UP TO 16 VOICES", 903, 520, 146, 20, juce::Justification::centred);
+    g.setColour(cream.withAlpha(.6f)); g.drawRoundedRectangle(42, 612, 145, 177, 3, 1);
+    g.setColour(cream); g.setFont(11);
+    g.drawText("PITCH", 45, 622, 62, 20, juce::Justification::centred);
+    g.drawText("MOD", 115, 622, 62, 20, juce::Justification::centred);
+    g.setFont(13);
+    g.drawText("THREE OSCILLATOR VIRTUAL ANALOG SYNTHESIZER", 220, 611, 816, 23, juce::Justification::centred);
+    for (int x : {38, 1062}) for (int y : {11, 788}) {
+      g.setColour(juce::Colour(0xffb7b9ad)); g.fillEllipse(float(x - 3), float(y - 3), 6, 6);
+      g.setColour(juce::Colours::black); g.drawLine(float(x - 2), float(y), float(x + 2), float(y), 1);
+    }
   }
 };

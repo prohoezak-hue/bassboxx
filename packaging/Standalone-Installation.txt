@@ -1,7 +1,7 @@
 BASSBOXX for macOS — standalone synthesizer
 
 This is BASSBOXX.app. You do not need MPC or another music host to run it.
-The original interface, synthesizer sounds, 100 presets, MIDI keyboard, patch
+The vintage Model D-inspired panel, original synthesizer sounds, 100 presets, MIDI keyboard, patch
 files and controls are preserved. Supports Apple Silicon and Intel, macOS 11+.
 
 START
@@ -39,3 +39,12 @@ audio, packaging, signatures, both architectures, installation and the local
 build route. Live output-device playback, physical MIDI controllers and Apple's
 policy on your own Mac still need local testing. The separate VST3 edition still
 needs MPC 3.10 scanning/playback tests; this standalone app does not require MPC.
+
+NEW PERFORMANCE CONTROLS (1.1.0)
+POLY/MONO switches between one voice and your previous poly voice count. Mono is
+last-note legato and returns to a still-held older key when the newest is released.
+The PITCH wheel bends all voices by approximately ±2 semitones and springs to
+centre on release. MOD holds its position and adds 5 Hz vibrato, up to ±0.5 semitone.
+Double-click either wheel to reset it. Physical MIDI pitch bend and CC1 also work
+per channel. Wheel positions are live controls, not saved patch settings. Voice
+mode is saved with patches. Factory programs retain their original voice counts.

@@ -1,5 +1,29 @@
 # BASSBOXX macOS standalone and VST3 validation
 
+## 1.1.0 vintage skin, voice mode and wheels
+
+This update adds the requested Model D-inspired panel, a Poly/Mono button tied to
+existing Voices, last-note mono/legato with held-key return, and onscreen pitch
+and modulation wheels. The pitch wheel returns to centre; modulation holds its
+position and adds 5 Hz vibrato with a maximum ±0.5-semitone depth. Hardware CC1 and
+pitch bend are handled at MIDI event sample positions, per channel. UI wheel
+requests use atomics and are applied to all channels on the next audio block.
+The wheels are transient controls; existing patch/parameter IDs remain unchanged.
+
+Local engine checks cover mono note priority/return, release, sustain, panic,
+poly/mono transitions, per-channel modulation, finite audio and vibrato depth.
+A separate before/after audio comparison against the previous engine rendered all
+100 presets at 44.1/48/96 kHz with wheels at rest: maximum sample difference was 0
+for single notes and the tested polyphonic sequences. Mono overlapping-note
+behavior is intentionally improved rather than compared with the old behavior.
+
+Processor/editor tests now drive the actual mode button and wheels, compare the
+rendered wheel-controlled audio with equivalent hardware MIDI, check spring-back,
+held modulation, patch mode recall, visible bounds and all 21 original knobs.
+The existing standalone app, VST3 host/scan, external validator, quarantine and
+local-build/installer checks remain required for the new release. The new skin
+snapshot is rendered by the real editor and published with the release.
+
 ## Standalone application
 
 The new standalone target adds `BASSBOXX.app` alongside the VST3 at the user's

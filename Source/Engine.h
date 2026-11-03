@@ -87,11 +87,61 @@ class Engine {
   std::array<Voice, 16> v{};
   std::array<bool, 16> pedal{};
   std::array<float, 16> bends{};
+  std::array<float, 16> modulation{};
+  std::array<std::array<uint64_t, 128>, 16> heldOrder{};
+  std::array<std::array<float, 128>, 16> heldVelocity{};
+  int heldCount = 0;
+  bool monoMode = false, modulationActive = false;
+  double modulationPhase = 0;
   double sr = 44100;
   uint64_t age = 0;
   float bass = 0;
   Patch smooth;
   bool initial = true;
+  void syncMode() {
+    const bool next = patch.voices == 1;
+    if (next == monoMode) return;
+    if (next) {
+      Voice newest;
+      for (const auto &voice : v)
+        if (voice.amp.stage && voice.held && voice.age >= newest.age) newest = voice;
+      if (!newest.amp.stage)
+        for (const auto &voice : v)
+          if (voice.amp.stage && voice.age >= newest.age) newest = voice;
+      v = {};
+      v[0] = newest;
+      if (heldCount > 0) restoreMonoHeldNote();
+    }
+    monoMode = next;
+  }
+  void assignMono(int note, float velocity, int channel, bool legato) {
+    auto &voice = v[0];
+    if (!legato || !voice.amp.stage || voice.amp.stage == 4) {
+      const double oldHz = voice.hz;
+      voice = Voice{};
+      voice.hz = patch.glide > 0 && oldHz > 0 ? oldHz : 440 * std::pow(2.0, (note - 69) / 12.0);
+      voice.amp.on();
+      voice.filterEnvelope.on();
+    }
+    voice.note = note;
+    voice.channel = channel;
+    voice.velocity = velocity;
+    voice.held = true;
+    voice.deferred = false;
+    voice.age = heldOrder[size_t(channel - 1)][size_t(note)];
+  }
+  bool restoreMonoHeldNote() {
+    uint64_t newest = 0;
+    int note = 0, channel = 0;
+    for (int c = 0; c < 16; ++c)
+      for (int n = 0; n < 128; ++n)
+        if (heldOrder[size_t(c)][size_t(n)] > newest) {
+          newest = heldOrder[size_t(c)][size_t(n)]; note = n; channel = c;
+        }
+    if (!newest) return false;
+    assignMono(note, heldVelocity[size_t(channel)][size_t(note)], channel + 1, true);
+    return true;
+  }
   static double blep(double t, double dt) {
     if (t < dt) {
       t /= dt;
@@ -124,12 +174,26 @@ public:
     v = {};
     pedal = {};
     bends = {};
+    modulation = {};
+    heldOrder = {};
+    heldVelocity = {};
+    heldCount = 0;
+    monoMode = false;
+    modulationActive = false;
+    modulationPhase = 0;
     bass = 0;
     initial = true;
   }
   void noteOn(int note, float velocity, int ch = 1) {
     if (ch < 1 || ch > 16 || note < 0 || note > 127)
       return;
+    syncMode();
+    const bool legato = heldCount > 0;
+    auto &order = heldOrder[size_t(ch - 1)][size_t(note)];
+    if (!order) ++heldCount;
+    order = ++age;
+    heldVelocity[size_t(ch - 1)][size_t(note)] = velocity;
+    if (monoMode) { assignMono(note, velocity, ch, legato); return; }
     int n = std::clamp(patch.voices, 1, 16);
     Voice *voice = &v[0];
     for (int i = 0; i < n; ++i) {
@@ -148,12 +212,17 @@ public:
     voice->note = note;
     voice->channel = ch;
     voice->held = true;
-    voice->age = ++age;
+    voice->age = age;
     voice->velocity = velocity;
     voice->amp.on();
     voice->filterEnvelope.on();
   }
   void noteOff(int note, int ch = 1) {
+    if (ch < 1 || ch > 16 || note < 0 || note > 127) return;
+    syncMode();
+    auto &order = heldOrder[size_t(ch - 1)][size_t(note)];
+    if (order) { order = 0; --heldCount; }
+    if (monoMode && v[0].note == note && v[0].channel == ch && restoreMonoHeldNote()) return;
     for (auto &x : v)
       if (x.note == note && x.channel == ch && x.held) {
         x.held = false;
@@ -166,6 +235,7 @@ public:
       }
   }
   void sustain(bool down, int ch = 1) {
+    if (ch < 1 || ch > 16) return;
     pedal[ch - 1] = down;
     if (!down)
       for (auto &x : v)
@@ -175,8 +245,20 @@ public:
           x.filterEnvelope.off();
         }
   }
-  void bend(float semitones, int ch = 1) { bends[ch - 1] = semitones; }
+  void bend(float semitones, int ch = 1) {
+    if (ch >= 1 && ch <= 16 && std::isfinite(semitones)) bends[size_t(ch - 1)] = semitones;
+  }
+  void modulate(float amount, int ch = 1) {
+    if (ch < 1 || ch > 16) return;
+    modulation[size_t(ch - 1)] = std::isfinite(amount) ? std::clamp(amount, 0.0f, 1.0f) : 0;
+    modulationActive = std::any_of(modulation.begin(), modulation.end(), [](float x) { return x > 0; });
+  }
   void allOff(int ch = 0) {
+    if (ch < 0 || ch > 16) return;
+    for (int c = 0; c < 16; ++c)
+      if (ch == 0 || c == ch - 1)
+        for (auto &order : heldOrder[size_t(c)])
+          if (order) { order = 0; --heldCount; }
     for (auto &x : v)
       if (ch == 0 || x.channel == ch)
         x = Voice{};
@@ -184,8 +266,10 @@ public:
       pedal = {};
     else
       pedal[ch - 1] = false;
+    if (monoMode && !v[0].amp.stage && heldCount > 0) restoreMonoHeldNote();
   }
   float sample() {
+    syncMode();
     if (initial) {
       smooth = patch;
       initial = false;
@@ -195,6 +279,9 @@ public:
     smooth.boost += a * (patch.boost - smooth.boost);
     smooth.gain += a * (patch.gain - smooth.gain);
     float out = 0;
+    const double vibrato = modulationActive ? std::sin(2 * pi * modulationPhase) : 0;
+    modulationPhase += 5.0 / sr;
+    if (modulationPhase >= 1) modulationPhase -= 1;
     int n = std::clamp(patch.voices, 1, 16);
     for (int i = 0; i < 16; ++i) {
       auto &x = v[i];
@@ -212,8 +299,11 @@ public:
       float fe =
           x.filterEnvelope.tick(patch.filterAttack, patch.filterDecay,
                                 patch.filterSustain, patch.filterRelease, sr);
+      double frequency = x.hz;
+      const float depth = modulation[size_t(x.channel - 1)];
+      if (depth > 0) frequency *= std::pow(2.0, depth * .5 * vibrato / 12.0);
       for (int o = 0; o < 3; ++o) {
-        double dt = std::clamp(x.hz * std::pow(2.0, patch.tune[o] / 12.0) / sr,
+        double dt = std::clamp(frequency * std::pow(2.0, patch.tune[o] / 12.0) / sr,
                                0.000001, 0.45);
         s += float(osc(x.phase[o], dt, patch.wave[o])) * patch.level[o];
         x.phase[o] += dt;
