@@ -39,6 +39,12 @@ juce_add_plugin(BASSBOXX
 if(TARGET BASSBOXX_Standalone)
  target_sources(BASSBOXX_Standalone PRIVATE Source/Standalone.cpp)
  target_compile_definitions(BASSBOXX_Standalone PRIVATE JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
+ # This host has no native Recent Files menu. JUCE's optional precompiled nib
+ # would otherwise be copied, with download quarantine, from its source archive.
+ # Omit the unused resource; do not strip metadata from downloaded files/code.
+ get_target_property(standalone_sources BASSBOXX_Standalone SOURCES)
+ list(FILTER standalone_sources EXCLUDE REGEX "/RecentFilesMenuTemplate[.]nib$")
+ set_property(TARGET BASSBOXX_Standalone PROPERTY SOURCES "${standalone_sources}")
  add_test(NAME standalone COMMAND "${CMAKE_COMMAND}"
   "-DAPP=$<TARGET_BUNDLE_DIR:BASSBOXX_Standalone>"
   "-DREPORT=${CMAKE_CURRENT_BINARY_DIR}/standalone-report.json"

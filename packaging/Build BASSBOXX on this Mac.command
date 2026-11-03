@@ -50,6 +50,16 @@ ctest="$cmake_app/Contents/bin/ctest"
  -DCMAKE_BUILD_TYPE=Release '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' \
  -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DJUCE_SOURCE_DIR="$work/juce"
 "$cmake" --build "$work/build" --config Release --parallel 2
+# Check the new app before executing it, including in the test suite.
+local_app="$work/build/BASSBOXX_artefacts/Release/Standalone/BASSBOXX.app"
+if [[ -d "$local_app" ]]; then
+ attributes=$(/usr/bin/xattr -lr "$local_app")
+ if [[ "$attributes" == *com.apple.quarantine:* ]]; then
+  echo 'New local app output is quarantined. Stopping without changing attributes.'
+  printf '%s\n' "$attributes" | /usr/bin/awk '/com.apple.quarantine:/ { sub(/: com.apple.quarantine:.*/, ""); print "Quarantined file: " $0 }'
+  exit 1
+ fi
+fi
 "$ctest" --test-dir "$work/build" -C Release --output-on-failure --timeout 120
 if [[ -d "$bundle/BASSBOXX.app" ]]; then
  app="$work/build/BASSBOXX_artefacts/Release/Standalone/BASSBOXX.app"

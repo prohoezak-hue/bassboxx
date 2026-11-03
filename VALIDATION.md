@@ -15,6 +15,14 @@ is exercised from a quarantined app payload and launches the locally installed
 app in self-test mode. These additions require a new passing Mac CI run;
 results below refer to the older VST3-only commits unless stated otherwise.
 
+A focused Mac probe confirmed that JUCE's optional precompiled
+`RecentFilesMenuTemplate.nib` inherited quarantine when copied from the downloaded
+JUCE archive into the app. BASSBOXX does not use a native Recent Files menu;
+its original patch save/load controls are independent. The standalone target now
+omits that unused resource. No quarantine attribute is removed from any source,
+download or binary. The helper also checks the app before executing local tests.
+The full quarantined-payload build/install regression remains required.
+
 A standalone format does not confer Apple notarization. Downloads remain ad-hoc
 signed development builds. The app runs without MPC; physical audio output,
 hardware MIDI and local Apple policy still require testing on the user's Mac.
