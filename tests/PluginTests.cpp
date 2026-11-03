@@ -57,6 +57,37 @@ int main(int argc, char **argv) {
     }
   }
   check(sliderCount == 21 && wheelCount == 2, "21 synthesis knobs and both performance wheels present");
+  auto* previous = dynamic_cast<juce::TextButton*>(editor->findChildWithID("preset-previous"));
+  auto* next = dynamic_cast<juce::TextButton*>(editor->findChildWithID("preset-next"));
+  auto* menu = dynamic_cast<juce::ComboBox*>(editor->findChildWithID("sound-menu"));
+  check(previous && next && menu, "sound browsing arrows and dropdown present");
+  check(previous->getRight() <= menu->getX() && next->getRight() <= menu->getX()
+        && previous->getBottom() <= next->getY(), "up/down arrows immediately precede dropdown");
+  for (auto* control : {static_cast<juce::Component*>(previous), static_cast<juce::Component*>(next), static_cast<juce::Component*>(menu)})
+    check(control->isVisible() && editor->getLocalBounds().contains(control->getBounds()), "sound browser controls visible");
+  previous->onClick();
+  check(p.getCurrentProgram() == 99 && menu->getSelectedId() == 100, "up arrow wraps first sound to last and updates dropdown");
+  next->onClick();
+  check(p.getCurrentProgram() == 0 && menu->getSelectedId() == 1, "down arrow wraps last sound to first");
+  for (int i = 1; i <= 100; ++i) {
+    next->onClick();
+    check(p.getCurrentProgram() == i % 100 && menu->getSelectedId() == i % 100 + 1, "arrows browse every factory sound in order");
+  }
+  menu->setSelectedId(43, juce::sendNotificationSync);
+  check(p.getCurrentProgram() == 42, "dropdown still selects sounds directly");
+  BassboxxProcessor expectedProgram; expectedProgram.setCurrentProgram(42);
+  for (auto* parameter : p.getParameters())
+    check(parameter->getValue() == expectedProgram.getParameters()[parameter->getParameterIndex()]->getValue(), "browser loads complete sound parameters");
+  previous->onClick();
+  check(p.getCurrentProgram() == 41 && menu->getSelectedId() == 42, "arrows continue from dropdown selection");
+  p.setCurrentProgram(77);
+  next->onClick();
+  check(p.getCurrentProgram() == 78 && menu->getSelectedId() == 79, "arrows follow host program changes without stale selection");
+  juce::MemoryBlock browsedSound; p.getStateInformation(browsedSound);
+  previous->onClick(); p.setStateInformation(browsedSound.getData(), int(browsedSound.getSize()));
+  previous->onClick();
+  check(p.getCurrentProgram() == 77 && menu->getSelectedId() == 78, "arrows follow restored sound state");
+  p.setCurrentProgram(0); next->onClick(); previous->onClick();
   auto* mode = dynamic_cast<juce::TextButton*>(editor->findChildWithID("voice-mode"));
   auto* pitchWheel = dynamic_cast<juce::Slider*>(editor->findChildWithID("pitch-wheel"));
   auto* modWheel = dynamic_cast<juce::Slider*>(editor->findChildWithID("mod-wheel"));

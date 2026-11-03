@@ -6,6 +6,8 @@ A standalone macOS synthesizer and VST3 instrument. Supports native Apple Silico
 
 **[Download BASSBOXX standalone for Mac — ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-dc58fe446ee7/BASSBOXX-macOS-Standalone.zip)**
 
+Use the **up/down arrows** immediately before the sound dropdown to step through the 100 factory sounds, or choose a sound directly from the dropdown. The arrows wrap at either end.
+
 Choose **BASSBOXX-macOS-Standalone.zip** from the newest standalone-and-VST3 release. Extract the entire folder and open **BASSBOXX.app**. No MPC or other host is required. In the app choose **Options > Audio/MIDI Settings** to select speakers/headphones and enable your MIDI controller, or play the original on-screen keyboard.
 
 The app preserves the original panel, synthesizer, 100 presets and patch-file controls. Normal quitting saves its state. The standalone ZIP also includes a local-build helper that installs a newly compiled app in `~/Applications/BASSBOXX.app` using free Apple Command Line Tools. If macOS rejects the download, changing to standalone has not solved its trust status: follow the included local-build instructions, and stop if macOS blocks the helper or local output. Security protections and quarantine remain intact.

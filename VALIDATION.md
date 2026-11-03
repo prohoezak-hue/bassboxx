@@ -1,5 +1,22 @@
 # BASSBOXX macOS standalone and VST3 validation
 
+## 1.1.1 reference skin and preset arrows
+
+The editor now uses a cached dark wood face, orange-brown wood cheeks, brass
+borders and knob rims, warm ivory keys and lettering, an amber power lamp and
+colourful ProHoeZak wordmark styled after the supplied reference. All controls
+remain live JUCE components. The original DSP, factory patch definitions,
+parameter IDs, patch save/load and performance wheels are unchanged.
+
+Stacked up/down buttons immediately before the sound dropdown load previous/next
+factory sounds, wrapping at the ends. Holding a button repeats. Both buttons
+read the processor's current program, so browsing continues from dropdown,
+host and restored-state selections. The dropdown and voice mode refresh together.
+Processor tests cover every factory sound, boundary wrapping, direct dropdown
+selection, complete parameter loading, host/state changes and visible placement.
+The release still requires the full existing Mac/portable checks and visual
+inspection of the real editor snapshot before delivery.
+
 ## 1.1.0 vintage skin, voice mode and wheels
 
 This update adds the requested Model D-inspired panel, a Poly/Mono button tied to
