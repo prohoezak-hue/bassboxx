@@ -4,7 +4,7 @@ A standalone macOS synthesizer and VST3 instrument. Supports native Apple Silico
 
 ![BASSBOXX interface](docs/BASSBOXX-interface.png)
 
-**[Download BASSBOXX for Mac](https://github.com/prohoezak-hue/bassboxx/releases)**
+**[Download BASSBOXX standalone for Mac — ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-87603214259b/BASSBOXX-macOS-Standalone.zip)**
 
 Choose **BASSBOXX-macOS-Standalone.zip** from the newest standalone-and-VST3 release. Extract the entire folder and open **BASSBOXX.app**. No MPC or other host is required. In the app choose **Options > Audio/MIDI Settings** to select speakers/headphones and enable your MIDI controller, or play the original on-screen keyboard.
 

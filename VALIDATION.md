@@ -12,8 +12,23 @@ New checks launch the actual app event loop/window, verify the original editor,
 report. Packaging checks both universal slices, signatures, app install/upgrade,
 quarantine/tamper rejection, and startup after ZIP extraction. The source helper
 is exercised from a quarantined app payload and launches the locally installed
-app in self-test mode. These additions require a new passing Mac CI run;
-results below refer to the older VST3-only commits unless stated otherwise.
+app in self-test mode. These checks passed for source commit
+`87603214259b38da9bd1cdca274b1c4c0dcf3212` in
+[CI run 41607310512](https://github.com/prohoezak-hue/bassboxx/actions/runs/41607310512),
+including publication (22 minutes 23 seconds overall; Mac job 20 minutes 29 seconds).
+The five project tests, repeated standalone/VST3 scans and loads, both external
+VST3 validators, both product installers, extracted app startup, and the packaged
+local app build/install route completed successfully. No tests were disabled.
+
+**[Download BASSBOXX-macOS-Standalone.zip](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-87603214259b/BASSBOXX-macOS-Standalone.zip)**
+([release](https://github.com/prohoezak-hue/bassboxx/releases/tag/macos-87603214259b)).
+The published ZIP was downloaded independently and matched its published SHA-256:
+`39a5afa4743635288b3e4333306138cc3a47cb1847231a132365ba8ca9346cdf`.
+ZIP CRCs, payload hashes, launcher permissions, APPL bundle identity, signature
+resources and both arm64/x86_64 Mach-O executable slices passed inspection. The
+original engine, editor and processor source remained byte-for-byte unchanged.
+The unused nib is absent from the app. The older results below refer to the
+VST3-only commits unless stated otherwise.
 
 A focused Mac probe confirmed that JUCE's optional precompiled
 `RecentFilesMenuTemplate.nib` inherited quarantine when copied from the downloaded
@@ -21,7 +36,7 @@ JUCE archive into the app. BASSBOXX does not use a native Recent Files menu;
 its original patch save/load controls are independent. The standalone target now
 omits that unused resource. No quarantine attribute is removed from any source,
 download or binary. The helper also checks the app before executing local tests.
-The full quarantined-payload build/install regression remains required.
+The full quarantined-payload build/install regression passed after that fix; the source archive retains its quarantine metadata.
 
 A standalone format does not confer Apple notarization. Downloads remain ad-hoc
 signed development builds. The app runs without MPC; physical audio output,
