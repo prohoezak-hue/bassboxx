@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run a validator with a wall-clock limit and retain its complete output."""
+import html
 import os
 from pathlib import Path
 import signal
@@ -35,7 +36,17 @@ def main():
             if status < 0:
                 status = 128 - status
         print(f"Validator exit status: {status}", file=output)
-    print(log.read_text(errors="replace"), end="", flush=True)
+    result = log.read_text(errors="replace")
+    print(result, end="", flush=True)
+    # Keep the result visible on the run summary as well as in retained logs.
+    # The tail is bounded; the artifact still contains the complete output.
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a") as output:
+            output.write(f"### {html.escape(log.name)} — exit {status}\n\n")
+            output.write("<details><summary>Validator output (last 12000 characters)</summary>\n\n<pre>")
+            output.write(html.escape(result[-12000:]))
+            output.write("</pre></details>\n\n")
     return status
 
 
