@@ -9,7 +9,7 @@ import sys
 
 
 def main():
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 4:
         print("Usage: run-validator.py TIMEOUT_SECONDS LOG COMMAND [ARGS...]", file=sys.stderr)
         return 2
     timeout = float(sys.argv[1])
