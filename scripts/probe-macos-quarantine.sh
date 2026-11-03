@@ -34,8 +34,8 @@ printf '%s  %s\n' 20b740351cc030086951d87614bc08b42d072f1e4db68db1ef1d988e66dbbd
 git archive --format=tar HEAD CMakeLists.txt Source tests | gzip -n > "$work/source.tar.gz"
 xattr -w com.apple.quarantine '0083;00000000;BASSBOXX-CI;' "$work/juce.tar.gz" "$work/source.tar.gz"
 mkdir "$work/bass-source" "$work/juce"
-tar -xzf "$work/juce.tar.gz" -C "$work/juce" --strip-components=1
-tar -xzf "$work/source.tar.gz" -C "$work/bass-source"
+/usr/bin/tar -xzf "$work/juce.tar.gz" -C "$work/juce" --strip-components=1
+/usr/bin/tar -xzf "$work/source.tar.gz" -C "$work/bass-source"
 "$cmake" -S "$work/bass-source" -B "$work/bass-build" -DCMAKE_BUILD_TYPE=Release \
  '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DJUCE_SOURCE_DIR="$work/juce"
 "$cmake" --build "$work/bass-build" --target BASSBOXX_Standalone --parallel 3
@@ -49,3 +49,16 @@ for path in sys.argv[1:]:
   message=path+'\n'+line
   print('::notice::'+message.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
 PY
+
+app="$work/bass-build/BASSBOXX_artefacts/Release/Standalone/BASSBOXX.app"
+attributes=$(xattr -lr "$app")
+if [[ "$attributes" != *com.apple.quarantine:* ]]; then
+ "$cmake" "-DAPP=$app" "-DREPORT=$work/probe-app.json" -P "$work/bass-source/tests/StandaloneSmoke.cmake"
+ python3 - "$app" <<'PYDATA'
+import subprocess,sys
+s=subprocess.check_output(['xattr','-lr',sys.argv[1]],text=True)
+lines=[x for x in s.splitlines() if 'quarantine' in x]
+message='AFTER APP LAUNCH\n'+('\n'.join(lines) if lines else 'NO QUARANTINE')
+print('::notice::'+message.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+PYDATA
+fi
