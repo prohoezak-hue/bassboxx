@@ -18,7 +18,7 @@ exec > >(tee "$work/Build.log") 2>&1
 trap 'status=$?; echo "Build/install stopped at line $LINENO (exit $status). Log: $work/Build.log"; exit "$status"' ERR
 echo 'BASSBOXX local development build — original interface, engine and 100 presets.'
 echo "Build and log folder: $work"
-echo 'Quit MPC before installation. Compilation can take several minutes.'
+echo 'Quit BASSBOXX and MPC before installation. Compilation can take several minutes.'
 cd "$bundle"
 /usr/bin/shasum -a 256 -c Payload-SHA256.txt
 # Independently pinned, official upstream artifacts; keep TLS and checksums intact.
@@ -45,6 +45,28 @@ ctest="$cmake_app/Contents/bin/ctest"
  -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DJUCE_SOURCE_DIR="$work/juce"
 "$cmake" --build "$work/build" --config Release --parallel 2
 "$ctest" --test-dir "$work/build" -C Release --output-on-failure --timeout 120
+if [[ -d "$bundle/BASSBOXX.app" ]]; then
+ app="$work/build/BASSBOXX_artefacts/Release/Standalone/BASSBOXX.app"
+ /usr/bin/lipo "$app/Contents/MacOS/BASSBOXX" -verify_arch arm64 x86_64
+ /usr/bin/codesign --force --sign - --timestamp=none "$app"
+ /usr/bin/codesign --verify --deep --strict "$app"
+ attributes=$(/usr/bin/xattr -lr "$app")
+ if [[ "$attributes" == *com.apple.quarantine:* ]]; then
+  echo 'New local app output is quarantined. Stopping without changing attributes.'
+  exit 1
+ fi
+ mkdir "$work/install-source"
+ /usr/bin/ditto "$app" "$work/install-source/BASSBOXX.app"
+ cp "$bundle/Install BASSBOXX.command" "$work/install-source/Install BASSBOXX.command"
+ /bin/bash "$work/install-source/Install BASSBOXX.command"
+ installed="${BASSBOXX_APP_DIR:-$HOME/Applications}/BASSBOXX.app"
+ "$cmake" "-DAPP=$installed" "-DREPORT=$work/installed-standalone.json" -P "$work/source/tests/StandaloneSmoke.cmake"
+ echo 'PASS: standalone app locally compiled, tested and installed.'
+ echo "Open $installed. MPC is not required."
+ echo 'Use Options > Audio/MIDI Settings to choose your speakers/headphones and MIDI input.'
+ echo "Build log: $work/Build.log"
+ exit 0
+fi
 plugin="$work/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
 /usr/bin/lipo "$plugin/Contents/MacOS/BASSBOXX" -verify_arch arm64 x86_64
 # Sign only the newly compiled local output, never the downloaded precompiled VST3.

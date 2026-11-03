@@ -1,14 +1,25 @@
 # BASSBOXX by ProHoeZak
 
-A macOS VST3 synthesizer instrument for Akai MPC desktop. Supports native Apple Silicon (M-series/arm64) and Intel Macs, macOS 11 or newer. The only instrument product is `BASSBOXX.vst3`; no standalone application is built or packaged.
+A standalone macOS synthesizer and VST3 instrument. Supports native Apple Silicon (M-series/arm64) and Intel Macs, macOS 11 or newer. Run **BASSBOXX.app** on its own, or use **BASSBOXX.vst3** in a compatible music host.
 
 ![BASSBOXX interface](docs/BASSBOXX-interface.png)
 
-**[Download BASSBOXX for Mac — local-build ZIP](https://github.com/prohoezak-hue/bassboxx/releases)**
+**[Download BASSBOXX for Mac](https://github.com/prohoezak-hue/bassboxx/releases)**
 
-Choose the newest **macOS local development** prerelease and its `BASSBOXX-macOS-VST3.zip` asset. It includes the original instrument source, verified build dependencies, a guided local builder, and a precompiled development VST3. [Build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Audio demo](examples/BASSBOXX-demo.wav) · [Validation details](VALIDATION.md)
+Choose **BASSBOXX-macOS-Standalone.zip** from the newest standalone-and-VST3 release. Extract the entire folder and open **BASSBOXX.app**. No MPC or other host is required. In the app choose **Options > Audio/MIDI Settings** to select speakers/headphones and enable your MIDI controller, or play the original on-screen keyboard.
 
-## Install on your own Mac without a paid Apple membership
+The app preserves the original panel, synthesizer, 100 presets and patch-file controls. Normal quitting saves its state. The standalone ZIP also includes a local-build helper that installs a newly compiled app in `~/Applications/BASSBOXX.app` using free Apple Command Line Tools. If macOS rejects the download, changing to standalone has not solved its trust status: follow the included local-build instructions, and stop if macOS blocks the helper or local output. Security protections and quarantine remain intact.
+
+The separate **BASSBOXX-macOS-VST3.zip** is still available for music hosts. [Build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Validation](VALIDATION.md)
+
+## Standalone installation
+
+1. Download and extract **BASSBOXX-macOS-Standalone.zip**.
+2. Open **BASSBOXX.app**. To build/install locally without a paid Apple membership, run **Build BASSBOXX on this Mac.command**; if Apple's tools installer opens, finish it and rerun the helper.
+3. Wait for **PASS: standalone app locally compiled, tested and installed**, then open `~/Applications/BASSBOXX.app`.
+4. Select **Options > Audio/MIDI Settings**, choose your output and MIDI input, and play at low volume. Physical output/MIDI and security behavior on your own Mac still need testing.
+
+## VST3 installation without a paid Apple membership
 
 1. Quit MPC and extract the **entire** ZIP. Keep all its files together.
 2. Double-click **Build BASSBOXX on this Mac.command**. If Apple's free Command Line Tools are missing, it opens Apple's installer: complete that installation, then double-click the builder again. No code editing, Homebrew, paid membership, or Apple signing credentials are needed. Allow several minutes and several GB of free disk space for compilation.
@@ -45,11 +56,11 @@ Inside MPC on your Mac, check initial scan/retry, live MIDI and audio, all facto
 
 ## Automated builds and development
 
-GitHub Actions runs on pushes to `main` and the repair branch, pull requests and manual workflow dispatch. It builds a universal `arm64;x86_64` macOS VST3, runs engine/processor/editor tests, verifies both binary slices, ad-hoc signs and verifies the bundle, tests installer installation and upgrade, then extracts and verifies the ZIP again. Linux runs the portable DSP regression suite. The Mac job also tests the packaged local builder, first install/upgrade, quarantine and signature rejection, and both external validators on the locally built/installed copy. Both jobs must pass before a main/repair-branch push publishes a versioned development prerelease with the ZIP and checksum. It uses GitHub's built-in workflow token, with write permission scoped to publication; no personal token is needed on the runner.
+GitHub Actions runs on pushes to `main` and the repair branch, pull requests and manual workflow dispatch. It builds universal `arm64;x86_64` macOS standalone and VST3 products, runs engine/processor/editor tests, verifies both binary slices, ad-hoc signs and verifies the bundle, tests installer installation and upgrade, then extracts and verifies the ZIP again. Linux runs the portable DSP regression suite. The Mac job also tests the packaged local builder, first install/upgrade, quarantine and signature rejection, and both external validators on the locally built/installed copy. Both jobs must pass before a main/repair-branch push publishes a versioned development prerelease with the ZIP and checksum. It uses GitHub's built-in workflow token, with write permission scoped to publication; no personal token is needed on the runner.
 
 For maintainers, the build commands are in `.github/workflows/build.yml`; packaging is in `scripts/package-macos.sh`. CMake fetches pinned JUCE 8.0.6 (commit `51a8a6d7aeae7326956d747737ccf1575e61e209`) automatically. `-DJUCE_SOURCE_DIR=/path/to/JUCE` optionally reuses that dependency. On non-macOS platforms CMake builds the shared processor code and test utilities only, without a plugin or standalone target. `-DBASSBOXX_ENGINE_ONLY=ON` builds portable engine tests without JUCE. Neither test utilities nor the audio-demo renderer are shipped as instrument applications.
 
-`Source/Engine.h` implements portable DSP, `Plugin.cpp` handles JUCE MIDI/automation/state, and `Editor.h` implements the controls and custom patch files. The existing engine, 100 presets and vintage interface remain unchanged in the VST3-only packaging update.
+`Source/Engine.h` implements portable DSP, `Plugin.cpp` handles JUCE MIDI/automation/state, and `Editor.h` implements the controls and custom patch files. The engine, 100 presets and vintage interface are shared unchanged by the standalone app and VST3.
 
 ## Distribution and licensing
 

@@ -1,4 +1,23 @@
-# BASSBOXX macOS VST3 validation
+# BASSBOXX macOS standalone and VST3 validation
+
+## Standalone application
+
+The new standalone target adds `BASSBOXX.app` alongside the VST3 at the user's
+request. The earlier VST3-only restriction is superseded. Both formats use the
+same original processor, editor and engine; the new application host supplies
+JUCE's audio/MIDI device settings and normal-quit state persistence.
+
+New checks launch the actual app event loop/window, verify the original editor,
+100 programs and non-silent finite stereo MIDI audio, and require a fresh JSON
+report. Packaging checks both universal slices, signatures, app install/upgrade,
+quarantine/tamper rejection, and startup after ZIP extraction. The source helper
+is exercised from a quarantined app payload and launches the locally installed
+app in self-test mode. These additions require a new passing Mac CI run;
+results below refer to the older VST3-only commits unless stated otherwise.
+
+A standalone format does not confer Apple notarization. Downloads remain ad-hoc
+signed development builds. The app runs without MPC; physical audio output,
+hardware MIDI and local Apple policy still require testing on the user's Mac.
 
 ## Security rejection and local development installation
 

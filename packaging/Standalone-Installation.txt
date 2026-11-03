@@ -1,0 +1,41 @@
+BASSBOXX for macOS — standalone synthesizer
+
+This is BASSBOXX.app. You do not need MPC or another music host to run it.
+The original interface, synthesizer sounds, 100 presets, MIDI keyboard, patch
+files and controls are preserved. Supports Apple Silicon and Intel, macOS 11+.
+
+START
+1. Extract the entire BASSBOXX-macOS-Standalone.zip.
+2. Open BASSBOXX.app. For a local development installation without a paid Apple
+   membership, use "Build BASSBOXX on this Mac.command" instead (see below).
+3. In the app choose Options > Audio/MIDI Settings. Select your speakers or
+   headphones and enable your MIDI keyboard/controller if using one.
+4. Play the on-screen keyboard or your controller. Start at low volume.
+   Choose factory presets using the original preset menu. Save/load custom
+   patches with the original editor buttons. App state is saved on normal quit.
+
+LOCAL BUILD AND INSTALL (free Apple tools; no paid membership)
+Quit BASSBOXX, then double-click "Build BASSBOXX on this Mac.command".
+If Apple's free Command Line Tools installer opens, finish it and run the builder
+again. No code editing or Homebrew is required. Allow several minutes and several
+GB of disk space. Wait for "PASS: standalone app locally compiled, tested and
+installed", then open BASSBOXX.app in your home Applications folder:
+~/Applications/BASSBOXX.app
+The builder keeps a log and backs up an older app before replacing it.
+
+APPLE SECURITY
+The precompiled app is ad-hoc signed, not Developer ID signed/notarized. Creating
+a standalone app does not fix that distribution trust limitation; macOS can still
+block this download. The local builder compiles new output and signs only that
+local output. It checks the bundled CMake tool against Apple's assessment before
+running it. It never removes quarantine, disables Gatekeeper/SIP or adds trust
+exceptions. If macOS blocks the helper or local app, stop and keep the exact
+message. An ad-hoc local build is not Apple notarization or public distribution
+approval. The copy installer refuses a quarantined/rejected bundle.
+
+TESTING LIMITS
+CI checks app startup, its visible original editor, presets, offline MIDI stereo
+audio, packaging, signatures, both architectures, installation and the local
+build route. Live output-device playback, physical MIDI controllers and Apple's
+policy on your own Mac still need local testing. The separate VST3 edition still
+needs MPC 3.10 scanning/playback tests; this standalone app does not require MPC.

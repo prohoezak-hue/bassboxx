@@ -38,6 +38,11 @@ def main():
         print(f"Validator exit status: {status}", file=output)
     result = log.read_text(errors="replace")
     print(result, end="", flush=True)
+    if status and os.environ.get("GITHUB_ACTIONS") == "true":
+        # Make failures inspectable from the public run annotations too.
+        detail = (f"{log.name}: exit {status}\n" + result[-5000:])
+        detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+        print(f"::error::{detail}", flush=True)
     # Keep the result visible on the run summary as well as in retained logs.
     # The tail is bounded; the artifact still contains the complete output.
     summary = os.environ.get("GITHUB_STEP_SUMMARY")

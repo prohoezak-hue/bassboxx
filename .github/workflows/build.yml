@@ -1,4 +1,4 @@
-name: Build BASSBOXX macOS VST3
+name: Build BASSBOXX macOS app and VST3
 on:
   push:
     branches: [main, fix/vst3-host-load-validation]
@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   mac:
-    name: Universal macOS VST3, tests and ZIP
+    name: Universal macOS app, VST3, tests and ZIPs
     runs-on: macos-14
     timeout-minutes: 60
     steps:
@@ -42,15 +42,15 @@ jobs:
           cmake --build "$RUNNER_TEMP/vst3sdk-build" --config Release --target validator --parallel 3
           cmake -S .validator-tools/pluginval -B "$RUNNER_TEMP/pluginval-build" -DCMAKE_BUILD_TYPE=Release
           cmake --build "$RUNNER_TEMP/pluginval-build" --config Release --target pluginval --parallel 3
-      - name: Configure Apple Silicon and Intel VST3 only
+      - name: Configure Apple Silicon and Intel app and VST3
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
       - name: Build plugin and test executables
         id: plugin-build
-        run: cmake --build build --config Release --parallel 3
+        run: python3 scripts/run-validator.py 1200 build/validator-logs/build.log cmake --build build --config Release --parallel 3
       - name: Run engine, processor and real VST3 host loading tests and render the editor
         run: |
           ctest --test-dir build -C Release --output-on-failure --timeout 120
-          ctest --test-dir build -C Release --output-on-failure --repeat until-fail:3 -R 'vst3_scan|vst3_host_load'
+          ctest --test-dir build -C Release --output-on-failure --repeat until-fail:3 -R 'vst3_scan|vst3_host_load|standalone'
           build/plugin_tests "$RUNNER_TEMP/BASSBOXX-interface.png"
       - name: Steinberg VST3 Validator
         if: ${{ !cancelled() && steps.validator-tools.outcome == 'success' && steps.plugin-build.outcome == 'success' }}
@@ -83,10 +83,12 @@ jobs:
             --output-dir "$PWD/build/validator-logs/local-pluginval" --validate "$PWD/build/local-installed/BASSBOXX.vst3"
       - uses: actions/upload-artifact@v4
         with:
-          name: BASSBOXX-macOS-VST3
+          name: BASSBOXX-macOS-products
           path: |
             dist/BASSBOXX-macOS-VST3.zip
             dist/BASSBOXX-macOS-VST3.zip.sha256
+            dist/BASSBOXX-macOS-Standalone.zip
+            dist/BASSBOXX-macOS-Standalone.zip.sha256
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -96,7 +98,10 @@ jobs:
           path: |
             build/Testing/Temporary/LastTest.log
             build/validator-logs/
-            build/local-build-test/**/Build.log
+            build/standalone-report.json
+            build/standalone-extracted-report.json
+            build/local-build-test-run.*/**/Build.log
+            build/local-build-test-run.*/**/installed-standalone.json
             ${{ runner.temp }}/BASSBOXX-interface.png
           if-no-files-found: error
   engine:
@@ -109,7 +114,7 @@ jobs:
       - run: cmake --build build --parallel 2
       - run: ctest --test-dir build --output-on-failure
   publish:
-    name: Publish downloadable plugin
+    name: Publish downloadable app and plugin
     needs: [mac, engine]
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation') && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -118,7 +123,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: BASSBOXX-macOS-VST3
+          name: BASSBOXX-macOS-products
           path: dist
       - name: Publish tested ZIP as a versioned development release
         env:
@@ -130,21 +135,21 @@ jobs:
           set -euo pipefail
           tag="macos-${BUILD_SHA:0:12}"
           cat > release-notes.md <<EOF_NOTES
-          BASSBOXX by ProHoeZak — macOS VST3 instrument only.
+          BASSBOXX by ProHoeZak — standalone macOS synthesizer and VST3 instrument.
 
-          Download **BASSBOXX-macOS-VST3.zip** and extract the entire folder.
-          For local development without a paid Apple membership, quit MPC and run **Build BASSBOXX on this Mac.command**. It may ask you to install Apple's free Command Line Tools once; rerun it after that installation. The bundled CMake build tool must pass Apple's assessment. The helper compiles the original instrument, runs tests, backs up an existing installation, and installs the locally built VST3.
+          **Standalone app:** download **BASSBOXX-macOS-Standalone.zip**, extract the whole folder, and open **BASSBOXX.app**. MPC is not required. Choose **Options > Audio/MIDI Settings** for your output device and MIDI controller; the original on-screen keyboard also works.
+          **Local build/install:** the standalone ZIP includes **Build BASSBOXX on this Mac.command**. It builds the original instrument using free Apple Command Line Tools and the included verified dependencies, runs the tests, and installs the app in your home Applications folder. No paid Apple membership or code editing is needed. If Apple's tools installer opens, complete it and rerun the builder.
+          **VST3:** the separate **BASSBOXX-macOS-VST3.zip** is for MPC/other VST3 hosts and retains the VST3 local-build route.
 
-          Apple Silicon (arm64/M-series) and Intel (x86_64), macOS 11+. Engine/processor/real-VST3-host tests, Steinberg VST3 Validator and pluginval passed. CI also exercised the packaged local build and installer, rejected quarantined/unaccepted or signature-damaged binaries without replacing the installed plugin, verified both architecture slices and signatures, and tested both validators on the locally built/installed copy.
+          Universal arm64/x86_64, macOS 11+. CI passed engine/processor/VST3 scan/host tests, real standalone application launch with visible original editor and MIDI stereo rendering, Steinberg VST3 Validator and pluginval, installer/upgrade and quarantine/tamper rejection tests for both products, extracted-app startup, and the packaged local app build/install route. The original DSP, presets and editor are preserved.
 
-          The included precompiled plugin is ad-hoc signed, not Developer ID signed/notarized. It may still be rejected by macOS; do not use it as a Gatekeeper workaround. A local development build is not Apple notarization either. No quarantine attributes or security protections are removed or disabled. If macOS blocks the helper or local code, stop; this release does not override that policy.
-          MPC 3.10 scanning, playback, automation and project recall remain unverified. The previous MPC Timeout has not been reproduced or claimed fixed.
+          Both downloads are ad-hoc signed development builds, not Developer ID signed/notarized. A standalone app does not fix Apple's distribution trust rejection. macOS may block the app/helper; if it does, stop and retain the exact message. No quarantine or security protections are removed or disabled. Live playback, hardware MIDI and policy behavior on your own Mac require local testing. MPC 3.10 compatibility remains unverified for the VST3; the standalone app does not use MPC.
 
           Source commit: ${BUILD_SHA}
           EOF_NOTES
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/BASSBOXX-macOS-VST3.zip dist/BASSBOXX-macOS-VST3.zip.sha256 --clobber
+            gh release upload "$tag" dist/BASSBOXX-macOS-*.zip dist/BASSBOXX-macOS-*.zip.sha256 --clobber
           else
-            gh release create "$tag" dist/BASSBOXX-macOS-VST3.zip dist/BASSBOXX-macOS-VST3.zip.sha256 --target "$BUILD_SHA" --title "BASSBOXX macOS local development ${BUILD_SHA:0:7}" --prerelease --latest=false --notes-file release-notes.md
+            gh release create "$tag" dist/BASSBOXX-macOS-*.zip dist/BASSBOXX-macOS-*.zip.sha256 --target "$BUILD_SHA" --title "BASSBOXX macOS standalone and VST3 ${BUILD_SHA:0:7}" --prerelease --latest=false --notes-file release-notes.md
           fi
-          echo "Download: https://github.com/${GH_REPO}/releases/download/${tag}/BASSBOXX-macOS-VST3.zip" >> "$GITHUB_STEP_SUMMARY"
+          echo "Download: https://github.com/${GH_REPO}/releases/download/${tag}/BASSBOXX-macOS-Standalone.zip" >> "$GITHUB_STEP_SUMMARY"

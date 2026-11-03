@@ -25,7 +25,7 @@ else()
 endif()
 set(BASSBOXX_FORMATS)
 if(APPLE)
- set(BASSBOXX_FORMATS VST3)
+ set(BASSBOXX_FORMATS VST3 Standalone)
 else()
  message(STATUS "Non-macOS: shared-code tests only; no instrument binary is produced")
 endif()
@@ -37,7 +37,13 @@ juce_add_plugin(BASSBOXX
  IS_MIDI_EFFECT FALSE EDITOR_WANTS_KEYBOARD_FOCUS FALSE
  COPY_PLUGIN_AFTER_BUILD FALSE VST3_CATEGORIES Instrument Synth)
 if(TARGET BASSBOXX_Standalone)
- message(FATAL_ERROR "BASSBOXX must never build a standalone instrument")
+ target_sources(BASSBOXX_Standalone PRIVATE Source/Standalone.cpp)
+ target_compile_definitions(BASSBOXX_Standalone PRIVATE JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
+ add_test(NAME standalone COMMAND "${CMAKE_COMMAND}"
+  "-DAPP=$<TARGET_BUNDLE_DIR:BASSBOXX_Standalone>"
+  "-DREPORT=${CMAKE_CURRENT_BINARY_DIR}/standalone-report.json"
+  -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/StandaloneSmoke.cmake")
+ set_tests_properties(standalone PROPERTIES TIMEOUT 40)
 endif()
 juce_generate_juce_header(BASSBOXX)
 target_sources(BASSBOXX PRIVATE Source/Plugin.cpp Source/Plugin.h Source/Editor.h Source/Engine.h)
