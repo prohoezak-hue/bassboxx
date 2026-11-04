@@ -35,6 +35,10 @@ and exact unchanged instrument source/test/packaging paths before promoting thos
 artifacts. It rebuilds and tests the changed installer, repeats the engine suite,
 and repeats real signed-product installation before any notarization/publication.
 The manifest separately identifies instrument and installer source commits.
+The focused real-signature test then reported that codesign interpreted the
+requirement expression as a filename. The production verifier now uses codesign's
+required `=` prefix for an inline requirement. This preserves the Apple anchor
+and team checks; it does not relax signature verification.
 
 ## 1.2.0 Audio Unit loading route
 

@@ -31,7 +31,7 @@ final class PluginInstaller {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
         process.arguments = ["--verify", "--deep", "--strict", "-R",
-                             "anchor apple generic and certificate leaf[subject.OU] = \"5QF6Q5ATG5\"", bundle.path]
+                             "=anchor apple generic and certificate leaf[subject.OU] = \"5QF6Q5ATG5\"", bundle.path]
         let pipe = Pipe(); process.standardOutput = pipe; process.standardError = pipe
         try process.run(); process.waitUntilExit()
         let details = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
