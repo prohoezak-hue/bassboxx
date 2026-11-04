@@ -17,6 +17,21 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 60
     steps:
+      - name: Check manual distribution setup before building
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          HAVE_CERTIFICATES: ${{ secrets.MAC_SIGNING_P12_BASE64 != '' }}
+          HAVE_CERTIFICATE_PASSWORD: ${{ secrets.MAC_SIGNING_P12_PASSWORD != '' }}
+          HAVE_APPLE_ID: ${{ secrets.APPLE_ID != '' }}
+          HAVE_NOTARY_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
+        run: |
+          set -euo pipefail
+          for setting in HAVE_CERTIFICATES HAVE_CERTIFICATE_PASSWORD HAVE_APPLE_ID HAVE_NOTARY_PASSWORD; do
+            if [[ "${!setting}" != true ]]; then
+              echo "::error::Missing Developer ID configuration ($setting). Follow docs/Apple-Signing-Setup.md before running a manual distribution."
+              exit 1
+            fi
+          done
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
@@ -168,3 +183,55 @@ jobs:
             gh release create "$tag" dist/BASSBOXX-macOS-*.zip dist/BASSBOXX-macOS-*.zip.sha256 dist/BASSBOXX-interface.png --target "$BUILD_SHA" --title "BASSBOXX macOS standalone and VST3 ${BUILD_SHA:0:7}" --prerelease --latest=false --notes-file release-notes.md
           fi
           echo "Download: https://github.com/${GH_REPO}/releases/download/${tag}/BASSBOXX-macOS-Standalone.zip" >> "$GITHUB_STEP_SUMMARY"
+  developer_id:
+    name: Sign and notarize native Mac installer
+    needs: [mac, engine]
+    if: github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation')
+    runs-on: macos-14
+    timeout-minutes: 50
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BASSBOXX-macOS-products
+          path: validated-artifacts
+      - name: Developer ID signing, notarization and native installer verification
+        env:
+          MAC_SIGNING_P12_BASE64: ${{ secrets.MAC_SIGNING_P12_BASE64 }}
+          MAC_SIGNING_P12_PASSWORD: ${{ secrets.MAC_SIGNING_P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: bash scripts/package-developer-id.sh validated-artifacts signed-dist
+      - name: Retain notarization evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BASSBOXX-Developer-ID-evidence
+          path: |
+            signed-dist/notarization*.json
+            signed-dist/package-signature.txt
+            signed-dist/Build-info.json
+          if-no-files-found: ignore
+      - name: Publish accepted and stapled installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag="developer-id-${GITHUB_SHA:0:12}"
+          cat > signed-release-notes.md <<'NOTES'
+          BASSBOXX AU and VST3 for macOS 11+, Apple Silicon and Intel.
+
+          Download BASSBOXX-macOS-Plugins.pkg, quit MPC and open it using Apple's Installer. Administrator authorization installs the plugins in /Library/Audio/Plug-Ins/Components and /Library/Audio/Plug-Ins/VST3. After signature verification, older per-user BASSBOXX plugin duplicates are backed up in your home Library/Application Support/BASSBOXX/Backups folder. The standalone app is not replaced. No command-file helper or local compilation is required.
+
+          Plugins are Developer ID Application signed for team 5QF6Q5ATG5. The package is Developer ID Installer signed, accepted by Apple's notarization service, stapled and verified by Gatekeeper's installer assessment. The same workflow first passed the existing engine, processor, standalone, AU/VST3 hosting, Apple auval, Steinberg Validator, pluginval and development-installer regressions.
+
+          Restart MPC, keep Use Audio Units checked and choose Rescan All. Look for BASSBOXX as an AU instrument. MPC scanning, playback and project recall still require verification on your Mac; notarization does not certify MPC compatibility.
+          NOTES
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" signed-dist/BASSBOXX-macOS-Plugins.pkg signed-dist/BASSBOXX-macOS-Plugins.pkg.sha256 signed-dist/Build-info.json --clobber
+          else
+            gh release create "$tag" signed-dist/BASSBOXX-macOS-Plugins.pkg signed-dist/BASSBOXX-macOS-Plugins.pkg.sha256 signed-dist/Build-info.json --target "$GITHUB_SHA" --title 'BASSBOXX notarized Mac plugins' --prerelease --latest=false --notes-file signed-release-notes.md
+          fi

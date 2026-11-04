@@ -1,5 +1,30 @@
 # BASSBOXX macOS standalone and VST3 validation
 
+## Developer ID distribution preparation
+
+A manually dispatched job is prepared for team `5QF6Q5ATG5`, after the existing
+Mac and portable validation. It requires Developer ID Application and Developer
+ID Installer private-key identities plus Apple notarization credentials in
+repository secrets. It checks identity/team, signs both plugin slices with
+hardened runtime and trusted timestamp, builds/signs a native plugin package,
+requires an Accepted notary result, staples/validates the package, and requires
+Gatekeeper installer assessment before publishing a distinct Developer ID release.
+Its temporary keychain and decoded credentials are removed on exit; no credentials
+are put in release artifacts. The native installer verifies the new signed
+plugins before preserving/removing per-user duplicates and does not alter the
+standalone or macOS security policy. Home-folder changes run as that user.
+
+This is prepared infrastructure, not a completed notarization: no private-key
+identities or notarization credentials have been configured in this session, so
+actual signing, Apple submission and native installer runtime checks remain
+blocked on secure account setup. Syntax/preflight results are recorded with the
+setup commit; existing development-product validations below are unchanged.
+Preparation checks passed: workflow YAML and all 17 shell blocks, both script
+syntax checks, team-specific identity selection (valid/wrong/missing/ambiguous),
+missing-credential failure before output creation, and rejection of non-Accepted
+notarization status. These fixture/preflight checks are not macOS signing or
+installer runtime verification.
+
 ## 1.2.0 Audio Unit loading route
 
 The MPC screenshot showed Ignore/Skipped for both installed BASSBOXX VST3 paths,

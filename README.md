@@ -14,6 +14,16 @@ The app retains the original synthesizer, 100 presets and patch-file controls, w
 
 The separate **BASSBOXX-macOS-VST3.zip** is still available for music hosts. [Build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Validation](VALIDATION.md)
 
+## Developer ID / notarized installer setup
+
+Team **5QF6Q5ATG5** is configured for a manual signed-distribution workflow.
+Follow the [one-time Apple signing setup](docs/Apple-Signing-Setup.md) to create
+both Developer ID identities and store credentials in GitHub Actions secrets.
+No signed/notarized download is claimed until an actual submission is accepted,
+stapled and passes the installer assessment. Development ZIPs below remain
+ad-hoc signed. The new native installer will contain AU/VST3 and preserve the
+working standalone. MPC compatibility still requires local verification.
+
 ## MPC Ignore/Skipped and the Audio Unit edition (1.2.0)
 
 **[Download BASSBOXX Audio Unit for Mac](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-d6b56037c6ec/BASSBOXX-macOS-AU.zip)**
