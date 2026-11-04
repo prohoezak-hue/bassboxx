@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(BASSBOXX VERSION 1.0.1 LANGUAGES C CXX)
+project(BASSBOXX VERSION 1.0.2 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CTest)
@@ -28,10 +28,11 @@ if(APPLE)
 else()
  message(STATUS "Non-macOS: shared-code tests only; no instrument binary is produced")
 endif()
+# Preserve bundle/manufacturer/plugin IDs for existing host projects.
 juce_add_plugin(BASSBOXX
  COMPANY_NAME "ProHoeZak" BUNDLE_ID "com.prohoezak.bassboxx"
  PLUGIN_MANUFACTURER_CODE PhZk PLUGIN_CODE BsBx
- FORMATS ${BASSBOXX_FORMATS} PRODUCT_NAME "BASSBOXX"
+ FORMATS ${BASSBOXX_FORMATS} PRODUCT_NAME "The Funk Box"
  IS_SYNTH TRUE NEEDS_MIDI_INPUT TRUE NEEDS_MIDI_OUTPUT FALSE
  IS_MIDI_EFFECT FALSE EDITOR_WANTS_KEYBOARD_FOCUS FALSE
  COPY_PLUGIN_AFTER_BUILD FALSE VST3_CATEGORIES Instrument Synth)
