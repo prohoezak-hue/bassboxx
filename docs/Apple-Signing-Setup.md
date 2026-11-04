@@ -38,25 +38,33 @@ you have accepted Apple's agreements, and you are using the account-holder team.
 Do not purchase membership again or change certificate trust settings to bypass
 an invalid certificate. A `.cer` without its matching private key is insufficient.
 
-## 2. Export both signing identities as one encrypted .p12
+## 2. Keep the two encrypted identities separate
 
-1. In **My Certificates**, select both Developer ID certificate rows, including
-   their associated private keys.
-2. Choose **File → Export Items**. Select **Personal Information Exchange (.p12)**.
-3. Save it as **BASSBOXX-signing.p12** on your Desktop. Set a strong export
-   password and keep it in your password manager. macOS may request your login
-   keychain password to authorize the export.
-4. Keep this encrypted file secure. Do not upload it to the repository, send it
-   in chat, or commit it. The two certificates must belong to the configured team.
+The current setup uses **Application.p12** and **Installer.p12** in
+`Desktop/BASSBOXX-Apple-Signing`. They were created from the matching private
+keys and Apple certificates, imported in the login keychain, and both identities
+were confirmed valid. If you already completed this, do not regenerate keys or
+export them again. The workflow imports these two files separately; their export
+passwords may differ.
+
+If starting from Keychain Access instead, export each Developer ID identity
+separately from **My Certificates**, including its associated private key, as
+**Personal Information Exchange (.p12)**. Save each in the Desktop folder above,
+using the names Application.p12 and Installer.p12. Set strong export passwords
+and retain them privately. Do not export unrelated identities.
+
+Keep private keys, encrypted .p12 files and passwords out of chat and source
+control. No certificate trust overrides are required. The workflow verifies and
+imports Apple's official G2 intermediate to complete the signing chain.
 
 ## 3. Create an Apple app-specific password
 
 At [account.apple.com](https://account.apple.com/), open **Sign-In and Security →
 App-Specific Passwords** and generate a password named **BASSBOXX GitHub**.
 This is for Apple's notarization service. It is different from both your normal
-Apple Account password and the .p12 export password. Do not send any of them in chat.
+Apple Account password and each .p12 export password. Do not send any of them in chat.
 
-## 4. Put four values in GitHub Actions secrets
+## 4. Put six values in GitHub Actions secrets
 
 Open [BASSBOXX Actions secrets](https://github.com/prohoezak-hue/bassboxx/settings/secrets/actions).
 Choose **New repository secret** for each entry below. This is the secure GitHub
@@ -64,23 +72,32 @@ settings page, not an issue, source file, pull request, Actions input or chat.
 
 | Secret name (exact spelling) | What to enter |
 | --- | --- |
-| `MAC_SIGNING_P12_BASE64` | The encoded encrypted .p12 copied using the command below. |
-| `MAC_SIGNING_P12_PASSWORD` | The export password you chose for the .p12. |
+| `MAC_APPLICATION_P12_BASE64` | The encoded Application.p12 copied using the first command below. |
+| `MAC_APPLICATION_P12_PASSWORD` | The export password for Application.p12 (not its original .key password). |
+| `MAC_INSTALLER_P12_BASE64` | The encoded Installer.p12 copied using the second command below. |
+| `MAC_INSTALLER_P12_PASSWORD` | The export password for Installer.p12 (not its original .key password). |
 | `APPLE_ID` | The Apple Account email associated with this developer team. |
 | `APPLE_APP_SPECIFIC_PASSWORD` | The app-specific password generated in step 3. |
 
-To copy the encoded .p12, open Terminal and run this single command:
+Copy **Application.p12** into the clipboard using Terminal:
 
 ```sh
-/usr/bin/base64 -i "$HOME/Desktop/BASSBOXX-signing.p12" | /usr/bin/pbcopy
+/usr/bin/base64 -i "$HOME/Desktop/BASSBOXX-Apple-Signing/Application.p12" | /usr/bin/pbcopy
 ```
 
-It copies the value to your clipboard without printing it. Paste it only into
-the `MAC_SIGNING_P12_BASE64` secret's value field on GitHub and save it. Clear
-or replace your clipboard afterwards. Store the encrypted .p12 securely for
-future updates; it should not be part of any download or repository commit.
+Paste it only into the `MAC_APPLICATION_P12_BASE64` secret's value field and save.
+Then copy **Installer.p12**:
 
-GitHub does not display saved secret values. Verify the four secret **names**
+```sh
+/usr/bin/base64 -i "$HOME/Desktop/BASSBOXX-Apple-Signing/Installer.p12" | /usr/bin/pbcopy
+```
+
+Paste this second value only into `MAC_INSTALLER_P12_BASE64` and save. The commands
+copy without printing the private material. Clear or replace the clipboard after
+saving. Enter each export password in its corresponding password secret. These
+may be different passwords. Store both encrypted files securely for future updates.
+
+GitHub does not display saved secret values. Verify the six secret **names**
 exist; do not send screenshots showing their entered values.
 
 ## 5. Run the prepared distribution workflow
@@ -92,7 +109,7 @@ Developer ID job is included. If Run workflow is absent, confirm you are signed
 in to GitHub with repository write access. Do not merge unrelated changes just
 to expose the button.
 
-A manual run now checks for the four secrets first, runs the existing Mac and
+A manual run now checks for the six secrets first, runs the existing Mac and
 portable validation, then runs **Sign and notarize native Mac installer**. Normal
 push/PR development runs do not receive the signing credentials and do not run
 that distribution job. The signing step requires both valid identities for your

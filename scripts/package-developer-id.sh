@@ -5,7 +5,7 @@ set -euo pipefail
 set +x
 readonly team_id='5QF6Q5ATG5'
 [[ $# == 2 ]] || { echo 'Usage: package-developer-id.sh validated-artifacts output-directory'; exit 2; }
-for name in MAC_SIGNING_P12_BASE64 MAC_SIGNING_P12_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD GITHUB_SHA; do
+for name in MAC_APPLICATION_P12_BASE64 MAC_APPLICATION_P12_PASSWORD MAC_INSTALLER_P12_BASE64 MAC_INSTALLER_P12_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD GITHUB_SHA; do
  if [[ -z "${!name:-}" ]]; then echo "Required GitHub Actions secret/context missing: $name"; exit 2; fi
 done
 [[ "$(uname -s)" == Darwin ]] || { echo 'Developer ID distribution requires macOS.'; exit 2; }
@@ -31,12 +31,22 @@ cleanup() {
  exit "$status"
 }
 trap cleanup EXIT
-printf '%s' "$MAC_SIGNING_P12_BASE64" | /usr/bin/base64 --decode > "$work/identities.p12"
 /usr/bin/security create-keychain -p "$keychain_password" "$keychain"
 /usr/bin/security set-keychain-settings -lut 21600 "$keychain"
 /usr/bin/security unlock-keychain -p "$keychain_password" "$keychain"
-/usr/bin/security import "$work/identities.p12" -k "$keychain" -P "$MAC_SIGNING_P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/pkgbuild -T /usr/bin/productsign
-rm "$work/identities.p12"
+for kind in APPLICATION INSTALLER; do
+ encoded_name="MAC_${kind}_P12_BASE64"
+ password_name="MAC_${kind}_P12_PASSWORD"
+ printf '%s' "${!encoded_name}" | /usr/bin/base64 --decode > "$work/identity.p12"
+ /usr/bin/security import "$work/identity.p12" -k "$keychain" -P "${!password_name}" -T /usr/bin/codesign -T /usr/bin/pkgbuild -T /usr/bin/productsign
+ rm "$work/identity.p12"
+done
+# The user's identity became valid after adding Apple's G2 intermediate. Import
+# that public intermediate here too, after verifying it against system trust.
+# This does not add a trust override or import a new root certificate.
+/usr/bin/curl --fail --location --proto '=https' --proto-redir '=https' https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer -o "$work/DeveloperIDG2CA.cer"
+/usr/bin/security verify-cert -c "$work/DeveloperIDG2CA.cer"
+/usr/bin/security import "$work/DeveloperIDG2CA.cer" -k "$keychain"
 /usr/bin/security list-keychains -d user -s "$keychain" "${old_keychains[@]}"
 /usr/bin/security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null
 /usr/bin/security find-identity -v "$keychain" > "$work/identities.txt"

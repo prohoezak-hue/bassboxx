@@ -5,7 +5,9 @@
 A manually dispatched job is prepared for team `5QF6Q5ATG5`, after the existing
 Mac and portable validation. It requires Developer ID Application and Developer
 ID Installer private-key identities plus Apple notarization credentials in
-repository secrets. It checks identity/team, signs both plugin slices with
+repository secrets. The two encrypted identities are imported separately, with
+independent passwords; Apple's G2 intermediate is verified against system trust
+and imported without trust overrides. It checks identity/team, signs both plugin slices with
 hardened runtime and trusted timestamp, builds/signs a native plugin package,
 requires an Accepted notary result, staples/validates the package, and requires
 Gatekeeper installer assessment before publishing a distinct Developer ID release.

@@ -20,13 +20,15 @@ jobs:
       - name: Check manual distribution setup before building
         if: github.event_name == 'workflow_dispatch'
         env:
-          HAVE_CERTIFICATES: ${{ secrets.MAC_SIGNING_P12_BASE64 != '' }}
-          HAVE_CERTIFICATE_PASSWORD: ${{ secrets.MAC_SIGNING_P12_PASSWORD != '' }}
+          HAVE_APPLICATION: ${{ secrets.MAC_APPLICATION_P12_BASE64 != '' }}
+          HAVE_APPLICATION_PASSWORD: ${{ secrets.MAC_APPLICATION_P12_PASSWORD != '' }}
+          HAVE_INSTALLER: ${{ secrets.MAC_INSTALLER_P12_BASE64 != '' }}
+          HAVE_INSTALLER_PASSWORD: ${{ secrets.MAC_INSTALLER_P12_PASSWORD != '' }}
           HAVE_APPLE_ID: ${{ secrets.APPLE_ID != '' }}
           HAVE_NOTARY_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
         run: |
           set -euo pipefail
-          for setting in HAVE_CERTIFICATES HAVE_CERTIFICATE_PASSWORD HAVE_APPLE_ID HAVE_NOTARY_PASSWORD; do
+          for setting in HAVE_APPLICATION HAVE_APPLICATION_PASSWORD HAVE_INSTALLER HAVE_INSTALLER_PASSWORD HAVE_APPLE_ID HAVE_NOTARY_PASSWORD; do
             if [[ "${!setting}" != true ]]; then
               echo "::error::Missing Developer ID configuration ($setting). Follow docs/Apple-Signing-Setup.md before running a manual distribution."
               exit 1
@@ -199,8 +201,10 @@ jobs:
           path: validated-artifacts
       - name: Developer ID signing, notarization and native installer verification
         env:
-          MAC_SIGNING_P12_BASE64: ${{ secrets.MAC_SIGNING_P12_BASE64 }}
-          MAC_SIGNING_P12_PASSWORD: ${{ secrets.MAC_SIGNING_P12_PASSWORD }}
+          MAC_APPLICATION_P12_BASE64: ${{ secrets.MAC_APPLICATION_P12_BASE64 }}
+          MAC_APPLICATION_P12_PASSWORD: ${{ secrets.MAC_APPLICATION_P12_PASSWORD }}
+          MAC_INSTALLER_P12_BASE64: ${{ secrets.MAC_INSTALLER_P12_BASE64 }}
+          MAC_INSTALLER_P12_PASSWORD: ${{ secrets.MAC_INSTALLER_P12_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         run: bash scripts/package-developer-id.sh validated-artifacts signed-dist
