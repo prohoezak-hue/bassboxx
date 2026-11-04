@@ -8,6 +8,11 @@ or paste another private signing file.**
 
 ## Receiving Mac
 
+**[Download the accepted notarized installer](https://github.com/prohoezak-hue/bassboxx/releases/download/developer-id-09399faec62b/BASSBOXX-macOS-Installer.dmg)**.
+Apple accepted both the native app and disk image, tickets were stapled/validated,
+and Gatekeeper assessments passed in [run 41797870831](https://github.com/prohoezak-hue/bassboxx/actions/runs/41797870831).
+No additional signing setup is needed to install this release.
+
 After an accepted signed release exists, download BASSBOXX-macOS-Installer.dmg,
 open it, open **Install BASSBOXX.app**, and click **Install** with MPC quit. It
 installs AU/VST3 into your user Library/Audio/Plug-Ins folders, verifies signatures,

@@ -4,6 +4,14 @@ A standalone macOS synthesizer and VST3 instrument. Supports native Apple Silico
 
 ![BASSBOXX interface](docs/BASSBOXX-interface.png)
 
+**[Download the signed and Apple-notarized Mac plugin installer — DMG](https://github.com/prohoezak-hue/bassboxx/releases/download/developer-id-09399faec62b/BASSBOXX-macOS-Installer.dmg)**
+
+Quit MPC, open the DMG, open **Install BASSBOXX.app**, and click **Install**.
+No Terminal, certificate setup or compilation is needed on the receiving Mac.
+Your working standalone stays unchanged. Restart MPC, keep **Use Audio Units**
+checked and choose **Rescan All**. Actual MPC scan/playback still needs local
+verification. The development ZIP links below remain separately ad-hoc signed.
+
 **[Download BASSBOXX standalone for Mac — ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-25145632ff6d/BASSBOXX-macOS-Standalone.zip)**
 
 Use the **up/down arrows** immediately before the sound dropdown to step through the 100 factory sounds, or choose a sound directly from the dropdown. The arrows wrap at either end.
@@ -23,8 +31,7 @@ owner's Application identity and Apple notarization credentials remain in GitHub
 Actions secrets; receiving Macs do not need certificates, a build helper or local
 compilation. Open the finished DMG, open Install BASSBOXX.app and click Install.
 The app installs user AU/VST3 copies with backup/rollback and preserves the working
-standalone. No signed/notarized download is claimed until Apple accepts both the
-app and disk image and their stapled tickets/Gatekeeper assessments pass.
+standalone. Apple accepted both the app and disk image in [run 41797870831](https://github.com/prohoezak-hue/bassboxx/actions/runs/41797870831); both tickets were stapled/validated and Gatekeeper assessments passed.
 MPC scanning/playback still requires verification on the user's Mac.
 
 ## MPC Ignore/Skipped and the Audio Unit edition (1.2.0)

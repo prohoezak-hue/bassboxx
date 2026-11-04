@@ -2,6 +2,32 @@
 
 ## Developer ID native installer app
 
+**Completed signed release:** [BASSBOXX-macOS-Installer.dmg](https://github.com/prohoezak-hue/bassboxx/releases/download/developer-id-09399faec62b/BASSBOXX-macOS-Installer.dmg).
+Installer source `09399faec62b0b26be62b4b7c43266419d042e6e` passed
+[run 41797870831](https://github.com/prohoezak-hue/bassboxx/actions/runs/41797870831)
+(2 minutes 32 seconds overall; focused signing/installer job 2 minutes 14 seconds).
+The workflow verified the prior successful full Mac validation in run 41793829620
+and unchanged instrument sources/test/packaging paths before reusing instrument
+binaries from `85c360b225ca51e0774b377995ad4c6947fa6cab`. The installer was rebuilt,
+its native window/fixture/transaction tests passed, and real signed-product
+installation with the production signature verifier passed, including unsigned
+payload refusal. The engine suite passed again. No instrument regression check
+was weakened; the manifest identifies both source commits.
+
+Apple accepted app submission `f697b3dd-43f1-4707-8117-b5bcdb45e7a9` and DMG
+submission `47419363-523b-458d-9437-83ca20253020`. Both tickets were stapled and
+validated. Gatekeeper execute assessment of the app and primary-signature open
+assessment of the DMG passed before publication. The payload uses Developer ID
+Application signatures for team `5QF6Q5ATG5`, hardened runtime and trusted timestamp.
+The published DMG and manifest were independently downloaded: SHA-256 matched
+`cd990c849aa678d9ac9956c03c91967b8b81b10d632d42f631e2025300aa37ba`
+(17,573,575 bytes). The UDIF trailer, exact source bindings, team, Accepted
+notarization records and distribution type passed inspection. Live installer use
+on the user's Mac and MPC scan/playback/project recall remain local checks.
+
+The paragraphs below record the implementation and resolved failures leading to
+this accepted build; they are not current signing blockers.
+
 The Application identity imported successfully in the manual signing run; the
 next Installer identity import failed with unknown format. To remove the need
 for further user credential work, distribution now uses only the already working
