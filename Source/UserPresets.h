@@ -506,10 +506,17 @@ inline constexpr std::array<UserPreset, 25> userPresets{{
     return p; }(), 2},
 }};
 constexpr int factoryProgramCount = 100;
-constexpr int programCount = factoryProgramCount + int(userPresets.size());
+constexpr int signatureProgramCount = int(userPresets.size());
+constexpr int programCount = factoryProgramCount + signatureProgramCount;
+// Projects/patches saved before 1.3.1 used factory-first program indices.
+inline int migrateLegacyProgram(int index) {
+  index = std::clamp(index, 0, programCount - 1);
+  return index < factoryProgramCount ? index + signatureProgramCount
+                                     : index - factoryProgramCount;
+}
 inline Patch programPatch(int index) {
   index = std::clamp(index, 0, programCount - 1);
-  return index < factoryProgramCount ? factory(index)
-                                    : userPresets[size_t(index - factoryProgramCount)].patch;
+  return index < signatureProgramCount ? userPresets[size_t(index)].patch
+                                       : factory(index - signatureProgramCount);
 }
 } // namespace bassboxx

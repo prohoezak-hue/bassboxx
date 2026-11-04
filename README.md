@@ -1,12 +1,12 @@
 # TheFunkBoxx by ProHoeZak
 
-TheFunkBoxx 1.3.0 is a macOS standalone synthesizer, Audio Unit and VST3 instrument for Apple Silicon and Intel Macs (macOS 11+). It retains the completed BASSBOXX synthesis and performance functions, with the requested black textured panel, cream trim, silver knobs and TheFunkBoxx branding.
+TheFunkBoxx 1.3.1 is a macOS standalone synthesizer, Audio Unit and VST3 instrument for Apple Silicon and Intel Macs (macOS 11+). It retains the completed BASSBOXX synthesis and performance functions, with the requested black textured panel, cream trim, silver knobs and TheFunkBoxx branding.
 
 ![TheFunkBoxx interface](docs/TheFunkBoxx-interface.png)
 
 ## Sounds and controls
 
-All three formats share 125 built-in sounds: the original 100 factory programs followed by 25 original ProHoeZak patches, from Rap (Bass) through Zapp (Bass). The dropdown and up/down arrows browse the complete bank. The original `.bassboxx` files are included under `Presets/ProHoeZak` and in each product ZIP. Their names, ordering and sound parameters are preserved.
+All three formats share 125 built-in sounds: 25 original ProHoeZak patches first (slots 1–25, Rap through Zapp), followed by the original 100 factory programs (slots 26–125). The dropdown and up/down arrows browse the complete bank. The original `.bassboxx` files are included under `Presets/ProHoeZak` and in each product ZIP. Their names and sound parameters are preserved. Fresh instances open on Rap. Existing saved states keep their sound settings and migrate to the corresponding new program positions.
 
 Three oscillators, mixer, resonant low-pass filter, separate amplitude/filter ADSR contours, Bass Boost, output, glide, 1–16 voices, Mono/Poly with last-note legato, pitch bend, modulation, sustain, MIDI keyboard, Panic, automation, project-state recall and patch save/load remain available. Original parameter IDs, patch format and factory program indices are retained. The standalone continues to use existing BASSBOXX settings.
 

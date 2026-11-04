@@ -168,12 +168,13 @@ void BassboxxProcessor::processBlock(AudioBuffer<float> &b,
 }
 const String BassboxxProcessor::getProgramName(int index) {
   index = jlimit(0, bassboxx::programCount - 1, index);
-  if (index >= bassboxx::factoryProgramCount)
-    return bassboxx::userPresets[size_t(index - bassboxx::factoryProgramCount)].name;
+  if (index < bassboxx::signatureProgramCount)
+    return bassboxx::userPresets[size_t(index)].name;
+  index -= bassboxx::signatureProgramCount;
   static const char *banks[] = {"Foundation", "Glide", "Acid",       "Pluck",
                                 "Sub",        "Fifth", "Atmosphere", "Vintage",
                                 "Lead",       "Impact"};
-  return String(index + 1).paddedLeft('0', 3) + " " +
+  return String(index + bassboxx::signatureProgramCount + 1).paddedLeft('0', 3) + " " +
          banks[jlimit(0, 99, index) / 10] + " " + String(index % 10 + 1);
 }
 void BassboxxProcessor::setCurrentProgram(int index) {
@@ -205,12 +206,13 @@ void BassboxxProcessor::setCurrentProgram(int index) {
   set("filterDecay", p.filterDecay);
   set("filterSustain", p.filterSustain);
   set("filterRelease", p.filterRelease);
-  if (selected >= bassboxx::factoryProgramCount)
-    polyVoices.store(bassboxx::userPresets[size_t(selected - bassboxx::factoryProgramCount)].polyVoices);
+  if (selected < bassboxx::signatureProgramCount)
+    polyVoices.store(bassboxx::userPresets[size_t(selected)].polyVoices);
 }
 void BassboxxProcessor::getStateInformation(MemoryBlock &dest) {
   auto tree = state.copyState();
   tree.setProperty("program", program.load(), nullptr);
+  tree.setProperty("programOrderVersion", 1, nullptr);
   const int count = int(values[19]->load());
   tree.setProperty("polyVoices", count > 1 ? count : polyVoices.load(), nullptr);
   if (auto xml = tree.createXml())
@@ -220,7 +222,10 @@ void BassboxxProcessor::setStateInformation(const void *data, int size) {
   if (auto xml = getXmlFromBinary(data, size)) {
     auto tree = ValueTree::fromXml(*xml);
     if (tree.hasType("BASSBOXX")) {
-      program = jlimit(0, bassboxx::programCount - 1, int(tree.getProperty("program", 0)));
+      const int savedProgram = int(tree.getProperty("program", 0));
+      program = int(tree.getProperty("programOrderVersion", 0)) == 0
+          ? bassboxx::migrateLegacyProgram(savedProgram)
+          : jlimit(0, bassboxx::programCount - 1, savedProgram);
       polyVoices.store(jlimit(2, 16, int(tree.getProperty("polyVoices", 8))));
       state.replaceState(tree);
     }

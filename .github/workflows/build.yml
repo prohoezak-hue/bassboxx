@@ -172,9 +172,9 @@ jobs:
           set -euo pipefail
           tag="macos-${BUILD_SHA:0:12}"
           cat > release-notes.md <<EOF_NOTES
-          TheFunkBoxx 1.3.0 by ProHoeZak — standalone, AU and VST3 for macOS 11+, Apple Silicon and Intel.
+          TheFunkBoxx 1.3.1 by ProHoeZak — standalone, AU and VST3 for macOS 11+, Apple Silicon and Intel.
 
-          Black textured panel, cream trim and brushed silver knobs, with 125 built-in sounds: the original 100 factory programs plus 25 original ProHoeZak presets. All original synthesis controls, Mono/Poly legato, pitch/mod wheels, hardware MIDI, automation, state recall and .bassboxx patch compatibility are retained.
+          Black textured panel, cream trim and brushed silver knobs, with 125 built-in sounds: 25 original ProHoeZak presets first, followed by the original 100 factory programs. All original synthesis controls, Mono/Poly legato, pitch/mod wheels, hardware MIDI, automation, state recall and .bassboxx patch compatibility are retained.
 
           Download TheFunkBoxx-macOS-Standalone.zip for the standalone app, TheFunkBoxx-macOS-AU.zip for Audio Units, or TheFunkBoxx-macOS-VST3.zip for VST3. Extract the whole folder and follow Installation.txt. The separate notarized DMG release provides the signed standalone and native AU/VST3 installer when Apple acceptance completes.
 
@@ -227,9 +227,9 @@ jobs:
           set -euo pipefail
           tag="developer-id-${GITHUB_SHA:0:12}"
           cat > signed-release-notes.md <<'NOTES'
-          TheFunkBoxx 1.3.0 — AU, VST3 and standalone for macOS 11+, Apple Silicon and Intel.
+          TheFunkBoxx 1.3.1 — AU, VST3 and standalone for macOS 11+, Apple Silicon and Intel.
 
-          Black textured panel, cream trim, brushed silver knobs, and 125 sounds including 25 original ProHoeZak presets. Existing synthesis, parameter IDs and .bassboxx patch compatibility are retained.
+          Black textured panel, cream trim, brushed silver knobs, and 125 sounds, with the 25 original ProHoeZak presets in the first 25 slots. Saved sound states migrate from the previous ordering. Existing synthesis, parameter IDs and .bassboxx patch compatibility are retained.
 
           Download TheFunkBoxx-macOS-Installer.dmg, open it, then open Install TheFunkBoxx.app and click Install. Quit MPC first. The app installs AU/VST3 into your user Library/Audio/Plug-Ins folders and backs up previous copies. For standalone, drag the included TheFunkBoxx.app into Applications and open it. Existing BASSBOXX installations are left in place. No private-key setup, command-file helper, administrator password or local compilation is required on the receiving Mac.
 

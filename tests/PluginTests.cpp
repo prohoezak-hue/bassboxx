@@ -11,6 +11,8 @@ int main(int argc, char **argv) {
   juce::ScopedJuceInitialiser_GUI gui;
   BassboxxProcessor p;
   check(p.getName() == "TheFunkBoxx", "new product name");
+  check(p.getCurrentProgram() == 0 && p.getProgramName(0) == "01 - Rap (Bass)",
+        "signature bank is first and is the fresh default");
   p.prepareToPlay(48000, 256);
   juce::AudioBuffer<float> audio(2, 256);
   juce::MidiBuffer midi;
@@ -32,7 +34,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < p.getNumPrograms(); ++i) {
     p.setCurrentProgram(i);
     check(p.getCurrentProgram() == i, "program selection");
-    if (i >= bassboxx::factoryProgramCount) {
+    if (i < bassboxx::signatureProgramCount) {
       const auto presetFile = juce::File(__FILE__).getParentDirectory()
           .getParentDirectory().getChildFile("Presets/ProHoeZak")
           .getChildFile(p.getProgramName(i) + ".bassboxx");
@@ -66,14 +68,40 @@ int main(int argc, char **argv) {
   p.setStateInformation(saved.getData(), int(saved.getSize()));
   check(p.getCurrentProgram() == 124, "program restored");
   check(std::abs(p.state.getRawParameterValue("boost")->load() -
-                     bassboxx::userPresets.back().patch.boost) < 1e-6f,
+                     bassboxx::factory(99).boost) < 1e-6f,
         "parameters restored");
-  p.setCurrentProgram(99);
-  p.getStateInformation(saved);
-  p.setCurrentProgram(100);
-  p.setStateInformation(saved.getData(), int(saved.getSize()));
-  check(p.getCurrentProgram() == 99 && p.getProgramName(99) == "100 Impact 10",
-        "existing factory state retains its program index");
+  check(p.getProgramName(24) == "025 - Zapp (Bass)" &&
+        p.getProgramName(25) == "026 Foundation 1" &&
+        p.getProgramName(124) == "125 Impact 10", "signature bank precedes all factory sounds");
+  // All 125 old program indices migrate without changing saved sound settings.
+  for (int old = 0; old < 125; ++old) {
+    const int current = bassboxx::migrateLegacyProgram(old);
+    p.setCurrentProgram(current);
+    p.getStateInformation(saved);
+    auto xml = juce::AudioProcessor::getXmlFromBinary(saved.getData(), int(saved.getSize()));
+    xml->removeAttribute("programOrderVersion");
+    xml->setAttribute("program", old);
+    juce::MemoryBlock legacy;
+    juce::AudioProcessor::copyXmlToBinary(*xml, legacy);
+    const float expectedCutoff = p.state.getRawParameterValue("cutoff")->load();
+    p.setCurrentProgram((current + 1) % 125);
+    p.setStateInformation(legacy.getData(), int(legacy.getSize()));
+    check(p.getCurrentProgram() == current, "legacy project restores the same named program");
+    check(p.state.getRawParameterValue("cutoff")->load() == expectedCutoff,
+          "legacy project restores its saved sound parameters");
+    p.getStateInformation(saved);
+    p.setCurrentProgram((current + 1) % 125);
+    p.setStateInformation(saved.getData(), int(saved.getSize()));
+    check(p.getCurrentProgram() == current, "resaved project does not migrate twice");
+  }
+  // New signature-first states roundtrip independently at every program index.
+  for (int i = 0; i < 125; ++i) {
+    p.setCurrentProgram(i);
+    p.getStateInformation(saved);
+    p.setCurrentProgram((i + 1) % 125);
+    p.setStateInformation(saved.getData(), int(saved.getSize()));
+    check(p.getCurrentProgram() == i, "signature-first program state roundtrip");
+  }
   midi.addEvent(juce::MidiMessage::allSoundOff(1), 0);
   for (int block = 0; block < 100; ++block)
     p.processBlock(audio, midi);
@@ -171,8 +199,8 @@ int main(int argc, char **argv) {
   p.processBlock(audio, midi);
   midi.addEvent(juce::MidiMessage::allSoundOff(1), 0); p.processBlock(audio, midi);
   p.setCurrentProgram(0);
-  mode->setToggleState(false, juce::dontSendNotification);
-  mode->setButtonText("POLY");
+  mode->setToggleState(p.isMonophonic(), juce::dontSendNotification);
+  mode->setButtonText(p.isMonophonic() ? "MONO" : "POLY");
   if (argc > 1) {
     check(editor->getWidth() == 1100 && editor->getHeight() == 800,
           "editor dimensions");
