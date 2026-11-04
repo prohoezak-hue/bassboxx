@@ -24,6 +24,18 @@ can trigger signing; PRs cannot. Public annotations identify failure phases
 without secret values. Actual signed/notarized results are recorded after an
 accepted run; prior development-product results below remain separately scoped.
 
+The first automatic application-only run (`85c360b`, run 41793829620) passed
+all Mac/native installer fixture/window tests and synth validators. Application
+identity import, Apple credential validation and real plugin signing succeeded.
+The production-verifier installation test then failed before submission. Staging
+now retains the recognized .component/.vst3 extension; test failures report their
+actual message rather than terminating through Swift's uncaught-error trap.
+An explicit [installer-only] repair route verifies the prior successful Mac job
+and exact unchanged instrument source/test/packaging paths before promoting those
+artifacts. It rebuilds and tests the changed installer, repeats the engine suite,
+and repeats real signed-product installation before any notarization/publication.
+The manifest separately identifies instrument and installer source commits.
+
 ## 1.2.0 Audio Unit loading route
 
 The MPC screenshot showed Ignore/Skipped for both installed BASSBOXX VST3 paths,

@@ -12,7 +12,11 @@ import Foundation
         try marker.write(to: root.appendingPathComponent("marker"), atomically: true, encoding: .utf8)
     }
     static func marker(_ url: URL) throws -> String { try String(contentsOf: url.appendingPathComponent("marker"), encoding: .utf8) }
-    static func main() throws {
+    static func main() {
+        do { try runTests() }
+        catch { fputs("FAIL: \(error.localizedDescription)\n", stderr); exit(1) }
+    }
+    static func runTests() throws {
         let root = fm.temporaryDirectory.appendingPathComponent("bassboxx-installer-tests-\(UUID().uuidString)")
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: root) }
@@ -22,7 +26,9 @@ import Foundation
         let home = root.appendingPathComponent("user")
         let au = home.appendingPathComponent("Library/Audio/Plug-Ins/Components/BASSBOXX.component")
         let vst3 = home.appendingPathComponent("Library/Audio/Plug-Ins/VST3/BASSBOXX.vst3")
-        let installer = PluginInstaller(resources: resources, home: home, verify: { _ in })
+        let installer = PluginInstaller(resources: resources, home: home, verify: { url in
+            try require(["component", "vst3"].contains(url.pathExtension), "staged bundle retains its recognized plugin extension")
+        })
         let fresh = try installer.install()
         try require(fresh.backup == nil && fresh.locations.count == 2, "first install")
         try require(try marker(au) == "new-au" && marker(vst3) == "new-vst3", "both products installed")

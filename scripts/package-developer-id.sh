@@ -81,6 +81,8 @@ if ! xcrun notarytool store-credentials BASSBOXX-distribution --keychain "$keych
  exit 1
 fi
 stage="Verify validated build artifacts"
+validated_source="${BASSBOXX_VALIDATED_SOURCE_SHA:-$GITHUB_SHA}"
+[[ "$validated_source" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid validated instrument source commit'; exit 1; }
 for archive in BASSBOXX-macOS-AU.zip BASSBOXX-macOS-VST3.zip BASSBOXX-native-installer-build.zip; do
  (cd "$artifacts" && /usr/bin/shasum -a 256 -c "$archive.sha256")
  /usr/bin/ditto -x -k "$artifacts/$archive" "$work/extracted"
@@ -88,7 +90,7 @@ done
 au="$work/extracted/BASSBOXX-AU/BASSBOXX.component"
 vst3="$work/extracted/BASSBOXX-macOS/BASSBOXX.vst3"
 for folder in BASSBOXX-AU BASSBOXX-macOS; do
- /usr/bin/grep -Fx "Source commit: $GITHUB_SHA" "$work/extracted/$folder/Build-info.txt" >/dev/null
+ /usr/bin/grep -Fx "Source commit: $validated_source" "$work/extracted/$folder/Build-info.txt" >/dev/null
 done
 app="$work/extracted/Install BASSBOXX.app"
 /usr/bin/codesign --verify --deep --strict "$app"
@@ -113,7 +115,7 @@ version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$au/C
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid product version'; exit 1; }
 stage="Test installation of actual signed products"
 xcrun swiftc -swift-version 5 -D INSTALLER_TEST packaging/native-installer/InstallerCore.swift tests/NativeInstallerTests.swift -o "$work/signed-installer-tests"
-"$work/signed-installer-tests" --signed-products "$plugins"
+python3 scripts/run-validator.py 90 "$output/installer-integration.log" "$work/signed-installer-tests" --signed-products "$plugins"
 stage="Developer ID signing of native installer app"
 /usr/bin/codesign --force --sign "$application_identity" --keychain "$keychain" --options runtime --timestamp "$app"
 /usr/bin/codesign --verify --deep --strict "$app"
@@ -164,9 +166,9 @@ xcrun stapler staple -v "$dmg"
 xcrun stapler validate -v "$dmg"
 /usr/sbin/spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
 (cd "$output" && /usr/bin/shasum -a 256 BASSBOXX-macOS-Installer.dmg > BASSBOXX-macOS-Installer.dmg.sha256)
-python3 - "$output/Build-info.json" "$GITHUB_SHA" "$team_id" "$version" "$output/notarization-app.json" "$output/notarization-dmg.json" <<'PY_MANIFEST'
+python3 - "$output/Build-info.json" "$GITHUB_SHA" "$team_id" "$version" "$output/notarization-app.json" "$output/notarization-dmg.json" "$validated_source" <<'PY_MANIFEST'
 import json,sys
-json.dump(dict(source_commit=sys.argv[2],team_id=sys.argv[3],version=sys.argv[4],notarization_status='Accepted',app_submission=json.load(open(sys.argv[5]))['id'],dmg_submission=json.load(open(sys.argv[6]))['id'],products=['AU','VST3'],distribution='native-installer-app-dmg',mpc_compatibility='Unverified'),open(sys.argv[1],'w'),indent=2)
+json.dump(dict(source_commit=sys.argv[2],instrument_source_commit=sys.argv[7],team_id=sys.argv[3],version=sys.argv[4],notarization_status='Accepted',app_submission=json.load(open(sys.argv[5]))['id'],dmg_submission=json.load(open(sys.argv[6]))['id'],products=['AU','VST3'],distribution='native-installer-app-dmg',mpc_compatibility='Unverified'),open(sys.argv[1],'w'),indent=2)
 PY_MANIFEST
 stage="Complete"
 echo 'PASS: native installer app and plugins signed, app and DMG accepted by Apple, tickets stapled/validated, Gatekeeper assessments passed.'

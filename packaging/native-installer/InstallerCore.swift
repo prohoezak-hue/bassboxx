@@ -61,7 +61,7 @@ final class PluginInstaller {
             let destination = parent.appendingPathComponent(name, isDirectory: true)
             if fm.fileExists(atPath: destination.path) { try checkIdentity(destination) }
             try fm.createDirectory(at: parent, withIntermediateDirectories: true)
-            let staged = parent.appendingPathComponent(".bassboxx-stage-\(UUID().uuidString)", isDirectory: true)
+            let staged = parent.appendingPathComponent(".bassboxx-stage-\(UUID().uuidString).\(source.pathExtension)", isDirectory: true)
             entries.append(Entry(destination: destination, staged: staged))
             try fm.copyItem(at: source, to: staged)
             try verify(staged)

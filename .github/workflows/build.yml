@@ -13,6 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   mac:
+    if: ${{ !(github.event_name == 'push' && contains(github.event.head_commit.message, '[installer-only]')) }}
     name: Universal macOS app, VST3, tests and ZIPs
     runs-on: macos-14
     timeout-minutes: 60
@@ -236,6 +237,85 @@ jobs:
           Download BASSBOXX-macOS-Installer.dmg, open it, then open Install BASSBOXX.app and click Install. Quit MPC first. The app installs AU/VST3 into your user Library/Audio/Plug-Ins folders and backs up previous copies. The standalone app is not changed. No private-key setup, command-file helper, administrator password or local compilation is required on the receiving Mac.
 
           The installer app, plugins and disk image are Developer ID Application signed for team 5QF6Q5ATG5. Apple accepted the app and disk image for notarization; their tickets are stapled and Gatekeeper assessments passed. Native installer tests cover first install, upgrade backups, signature rejection, rollback after a partial installation and preservation of unrelated files. The existing engine, processor, standalone, AU/VST3 hosting, Apple auval, Steinberg Validator and pluginval regressions passed first.
+
+          Restart MPC, keep Use Audio Units checked and choose Rescan All. Select BASSBOXX as an AU instrument. MPC scanning, playback and project recall still require verification on your Mac; notarization is not MPC certification.
+          NOTES
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" signed-dist/BASSBOXX-macOS-Installer.dmg signed-dist/BASSBOXX-macOS-Installer.dmg.sha256 signed-dist/Build-info.json --clobber
+          else
+            gh release create "$tag" signed-dist/BASSBOXX-macOS-Installer.dmg signed-dist/BASSBOXX-macOS-Installer.dmg.sha256 signed-dist/Build-info.json --target "$GITHUB_SHA" --title 'BASSBOXX notarized Mac installer' --prerelease --latest=false --notes-file signed-release-notes.md
+          fi
+
+  installer_repair:
+    name: Repair and notarize installer from validated synth build
+    needs: [engine]
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[notarize]') && contains(github.event.head_commit.message, '[installer-only]') && github.ref == 'refs/heads/fix/vst3-host-load-validation'
+    runs-on: macos-14
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify the previously validated instrument source and Mac tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          validated_sha="$(git rev-parse 85c360b)"
+          actual_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/41793829620" --jq '.head_sha')"
+          [[ "$actual_sha" == "$validated_sha" ]]
+          result="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/41793829620/jobs" --jq '.jobs[] | select(.name == "Universal macOS app, VST3, tests and ZIPs") | .conclusion')"
+          [[ "$result" == success ]]
+          git diff --exit-code "$validated_sha" -- CMakeLists.txt Source tests/EngineTests.cpp tests/PluginTests.cpp tests/VST3HostSmoke.cpp tests/StandaloneSmoke.cmake tests/InstallerTests.sh scripts/package-macos.sh scripts/prepare-local-build-payload.sh scripts/run-validator.py 'packaging/*.command'
+          echo "BASSBOXX_VALIDATED_SOURCE_SHA=$validated_sha" >> "$GITHUB_ENV"
+          echo "Reusing unchanged instrument binaries from the successful Mac validation in run 41793829620. Native installer tests run again below."
+      - uses: actions/download-artifact@v4
+        with:
+          name: BASSBOXX-macOS-products
+          path: validated-artifacts
+          run-id: 41793829620
+          github-token: ${{ github.token }}
+      - name: Rebuild and test only the changed native installer
+        run: |
+          python3 scripts/run-validator.py 180 build/validator-logs/native-installer-repair.log bash scripts/build-native-installer.sh build/native-installer
+          rm -f validated-artifacts/BASSBOXX-native-installer-build.zip
+          ditto -c -k --sequesterRsrc --keepParent 'build/native-installer/Install BASSBOXX.app' validated-artifacts/BASSBOXX-native-installer-build.zip
+          (cd validated-artifacts && shasum -a 256 BASSBOXX-native-installer-build.zip > BASSBOXX-native-installer-build.zip.sha256)
+      - name: Developer ID signing, notarization and native installer verification
+        env:
+          MAC_APPLICATION_P12_BASE64: ${{ secrets.MAC_APPLICATION_P12_BASE64 }}
+          MAC_APPLICATION_P12_PASSWORD: ${{ secrets.MAC_APPLICATION_P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: bash scripts/package-developer-id.sh validated-artifacts signed-dist
+      - name: Retain notarization evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BASSBOXX-Developer-ID-evidence
+          path: |
+            build/validator-logs/native-installer-repair.log
+            signed-dist/installer-integration.log
+            signed-dist/notarization*.json
+            build/native-installer/smoke.json
+            signed-dist/Build-info.json
+          if-no-files-found: ignore
+      - name: Publish accepted and stapled installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag="developer-id-${GITHUB_SHA:0:12}"
+          cat > signed-release-notes.md <<'NOTES'
+          BASSBOXX AU and VST3 for macOS 11+, Apple Silicon and Intel.
+
+          Download BASSBOXX-macOS-Installer.dmg, open it, then open Install BASSBOXX.app and click Install. Quit MPC first. The app installs AU/VST3 into your user Library/Audio/Plug-Ins folders and backs up previous copies. The standalone app is not changed. No private-key setup, command-file helper, administrator password or local compilation is required on the receiving Mac.
+
+          The installer app, plugins and disk image are Developer ID Application signed for team 5QF6Q5ATG5. Apple accepted the app and disk image for notarization; their tickets are stapled and Gatekeeper assessments passed. Native installer tests cover first install, upgrade backups, signature rejection, rollback after a partial installation and preservation of unrelated files. The unchanged instrument binaries previously passed the existing engine, processor, standalone, AU/VST3 hosting, Apple auval, Steinberg Validator and pluginval regressions in run 41793829620. This repair rebuilds/tests only the changed installer; the workflow verifies that instrument sources and validation scripts are unchanged before reusing those artifacts.
 
           Restart MPC, keep Use Audio Units checked and choose Rescan All. Select BASSBOXX as an AU instrument. MPC scanning, playback and project recall still require verification on your Mac; notarization is not MPC certification.
           NOTES
