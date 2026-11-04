@@ -45,7 +45,7 @@ class BassboxxEditor final : public juce::AudioProcessorEditor,
       waveAttachments;
   void file(bool writing) {
     chooser = std::make_unique<juce::FileChooser>(
-        writing ? "Save BASSBOXX patch" : "Load BASSBOXX patch", juce::File{},
+        writing ? "Save The Funk Box patch" : "Load The Funk Box patch", juce::File{},
         "*.bassboxx");
     chooser->launchAsync(
         (writing ? juce::FileBrowserComponent::saveMode |
@@ -197,7 +197,7 @@ public:
     }
     g.setColour(juce::Colours::ivory);
     g.setFont(32);
-    g.drawText("BASSBOXX", 52, 16, 300, 40, juce::Justification::centredLeft);
+    g.drawText("THE FUNK BOX", 52, 16, 300, 40, juce::Justification::centredLeft);
     g.setFont(15);
     g.drawText("by ProHoeZak", 54, 56, 280, 25,
                juce::Justification::centredLeft);

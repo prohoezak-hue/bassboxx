@@ -1,3 +1,9 @@
+# The Funk Box
+
+The renamed 1.0.2 installer is in preparation. See [installer build and signing instructions](packaging/RELEASE.md). GitHub Actions builds and notarizes a customer `.pkg` using repository signing secrets; pull requests build development packages. Mac signing verification and migration testing remain pending. Automatic release publication is paused during this transition.
+
+The previous BASSBOXX release and validation records below describe version 1.0.1, not the new installer.
+
 # BASSBOXX by ProHoeZak
 
 A macOS VST3 synthesizer instrument for Akai MPC desktop. Supports native Apple Silicon (M-series/arm64) and Intel Macs, macOS 11 or newer. The only instrument product is `BASSBOXX.vst3`; no standalone application is built or packaged.
