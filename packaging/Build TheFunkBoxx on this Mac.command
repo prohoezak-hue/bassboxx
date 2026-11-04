@@ -11,7 +11,7 @@ if ! /usr/bin/xcrun --find clang >/dev/null 2>&1; then
  /usr/bin/xcode-select --install || true
  exit 1
 fi
-root="${BASSBOXX_BUILD_ROOT:-$HOME/Library/Application Support/BASSBOXX/Local Builds}"
+root="${BASSBOXX_BUILD_ROOT:-$HOME/Library/Application Support/TheFunkBoxx/Local Builds}"
 mkdir -p "$root"
 work="$(mktemp -d "$root/build.XXXXXX")"
 exec > >(tee "$work/Build.log") 2>&1
@@ -27,9 +27,9 @@ cleanup() {
 }
 trap cleanup EXIT
 trap 'status=$?; echo "Build/install stopped at line $LINENO (exit $status). Log: $work/Build.log"; exit "$status"' ERR
-echo 'BASSBOXX local development build — original interface, engine and 100 presets.'
+echo 'TheFunkBoxx local development build — original interface, engine and 100 presets.'
 echo "Build and log folder: $work"
-echo 'Quit BASSBOXX and MPC before installation. Compilation can take several minutes.'
+echo 'Quit TheFunkBoxx and MPC before installation. Compilation can take several minutes.'
 cd "$bundle"
 /usr/bin/shasum -a 256 -c Payload-SHA256.txt
 # Independently pinned, official upstream artifacts; keep TLS and checksums intact.
@@ -44,14 +44,14 @@ cmake_app="$work/cmake-volume/CMake.app"
 /usr/sbin/spctl --assess --type execute --verbose=2 "$cmake_app"
 cmake="$cmake_app/Contents/bin/cmake"
 ctest="$cmake_app/Contents/bin/ctest"
-/usr/bin/tar -xzf "$bundle/LocalBuild/BASSBOXX-source.tar.gz" -C "$work/source"
+/usr/bin/tar -xzf "$bundle/LocalBuild/TheFunkBoxx-source.tar.gz" -C "$work/source"
 /usr/bin/tar -xzf "$bundle/LocalBuild/JUCE-8.0.6.tar.gz" -C "$work/juce" --strip-components=1
 "$cmake" -S "$work/source" -B "$work/build" -G 'Unix Makefiles' \
  -DCMAKE_BUILD_TYPE=Release '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' \
  -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DJUCE_SOURCE_DIR="$work/juce"
 "$cmake" --build "$work/build" --config Release --parallel 2
 # Check the new app before executing it, including in the test suite.
-local_app="$work/build/BASSBOXX_artefacts/Release/Standalone/BASSBOXX.app"
+local_app="$work/build/TheFunkBoxx_artefacts/Release/Standalone/TheFunkBoxx.app"
 if [[ -d "$local_app" ]]; then
  attributes=$(/usr/bin/xattr -lr "$local_app")
  if [[ "$attributes" == *com.apple.quarantine:* ]]; then
@@ -61,9 +61,9 @@ if [[ -d "$local_app" ]]; then
  fi
 fi
 "$ctest" --test-dir "$work/build" -C Release --output-on-failure --timeout 120
-if [[ -d "$bundle/BASSBOXX.app" ]]; then
- app="$work/build/BASSBOXX_artefacts/Release/Standalone/BASSBOXX.app"
- /usr/bin/lipo "$app/Contents/MacOS/BASSBOXX" -verify_arch arm64 x86_64
+if [[ -d "$bundle/TheFunkBoxx.app" ]]; then
+ app="$work/build/TheFunkBoxx_artefacts/Release/Standalone/TheFunkBoxx.app"
+ /usr/bin/lipo "$app/Contents/MacOS/TheFunkBoxx" -verify_arch arm64 x86_64
  /usr/bin/codesign --force --sign - --timestamp=none "$app"
  /usr/bin/codesign --verify --deep --strict "$app"
  attributes=$(/usr/bin/xattr -lr "$app")
@@ -72,10 +72,10 @@ if [[ -d "$bundle/BASSBOXX.app" ]]; then
   exit 1
  fi
  mkdir "$work/install-source"
- /usr/bin/ditto "$app" "$work/install-source/BASSBOXX.app"
- cp "$bundle/Install BASSBOXX.command" "$work/install-source/Install BASSBOXX.command"
- /bin/bash "$work/install-source/Install BASSBOXX.command"
- installed="${BASSBOXX_APP_DIR:-$HOME/Applications}/BASSBOXX.app"
+ /usr/bin/ditto "$app" "$work/install-source/TheFunkBoxx.app"
+ cp "$bundle/Install TheFunkBoxx.command" "$work/install-source/Install TheFunkBoxx.command"
+ /bin/bash "$work/install-source/Install TheFunkBoxx.command"
+ installed="${BASSBOXX_APP_DIR:-$HOME/Applications}/TheFunkBoxx.app"
  "$cmake" "-DAPP=$installed" "-DREPORT=$work/installed-standalone.json" -P "$work/source/tests/StandaloneSmoke.cmake"
  echo 'PASS: standalone app locally compiled, tested and installed.'
  echo "Open $installed. MPC is not required."
@@ -83,16 +83,16 @@ if [[ -d "$bundle/BASSBOXX.app" ]]; then
  echo "Build log: $work/Build.log"
  exit 0
 fi
-if [[ -d "$bundle/BASSBOXX.component" ]]; then
- plugin="$work/build/BASSBOXX_artefacts/Release/AU/BASSBOXX.component"
- name='BASSBOXX.component'
+if [[ -d "$bundle/TheFunkBoxx.component" ]]; then
+ plugin="$work/build/TheFunkBoxx_artefacts/Release/AU/TheFunkBoxx.component"
+ name='TheFunkBoxx.component'
  installed="${BASSBOXX_AU_DIR:-$HOME/Library/Audio/Plug-Ins/Components}/$name"
 else
- plugin="$work/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
- name='BASSBOXX.vst3'
+ plugin="$work/build/TheFunkBoxx_artefacts/Release/VST3/TheFunkBoxx.vst3"
+ name='TheFunkBoxx.vst3'
  installed="${BASSBOXX_PLUGIN_DIR:-$HOME/Library/Audio/Plug-Ins/VST3}/$name"
 fi
-/usr/bin/lipo "$plugin/Contents/MacOS/BASSBOXX" -verify_arch arm64 x86_64
+/usr/bin/lipo "$plugin/Contents/MacOS/TheFunkBoxx" -verify_arch arm64 x86_64
 # Sign only the newly compiled local output, never the downloaded precompiled VST3.
 /usr/bin/codesign --force --sign - --timestamp=none "$plugin"
 /usr/bin/codesign --verify --deep --strict "$plugin"
@@ -106,10 +106,10 @@ echo 'A distribution spctl assessment may still reject ad-hoc local code; no acc
 echo 'Checking actual local VST3 loading, not changing macOS assessment policy.'
 mkdir "$work/install-source"
 /usr/bin/ditto "$plugin" "$work/install-source/$name"
-cp "$bundle/Install BASSBOXX.command" "$work/install-source/Install BASSBOXX.command"
+cp "$bundle/Install TheFunkBoxx.command" "$work/install-source/Install TheFunkBoxx.command"
 # Calling the same installer preserves backup/upgrade behavior and its checks.
-/bin/bash "$work/install-source/Install BASSBOXX.command"
-if [[ "$name" == BASSBOXX.component ]]; then
+/bin/bash "$work/install-source/Install TheFunkBoxx.command"
+if [[ "$name" == TheFunkBoxx.component ]]; then
  "$cmake" "-DPLUGIN=$installed" "-DHOST_CHECK=$work/build/au_host_smoke" -P "$work/source/tests/ValidateAU.cmake"
  echo 'PASS: locally compiled, tested, installed and validated Audio Unit.'
  echo "Build log: $work/Build.log"
@@ -127,4 +127,4 @@ CMAKE
 echo 'PASS: locally compiled, tested, installed and loaded through the VST3 host smoke test.'
 echo 'This is not a successful MPC 3.10 scan or an Apple notarization.'
 echo "Keep this log if MPC reports a problem: $work/Build.log"
-echo 'Next: restart MPC, rescan the user VST3 folder, and test BASSBOXX in a plugin track.'
+echo 'Next: restart MPC, rescan the user VST3 folder, and test TheFunkBoxx in a plugin track.'

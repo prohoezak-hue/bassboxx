@@ -7,8 +7,8 @@ final class InstallerDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 510, height: 270),
                           styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-        window.title = "BASSBOXX Plugin Installer"
-        let title = NSTextField(labelWithString: "Install BASSBOXX")
+        window.title = "TheFunkBoxx Plugin Installer"
+        let title = NSTextField(labelWithString: "Install TheFunkBoxx")
         title.font = NSFont.boldSystemFont(ofSize: 25); title.frame = NSRect(x: 30, y: 207, width: 450, height: 35)
         window.contentView?.addSubview(title)
         let detail = NSTextField(wrappingLabelWithString: "Installs the AU and VST3 for your Mac user account.\n\nYour working standalone app stays unchanged. Quit MPC before clicking Install. Previous plugin copies are backed up automatically.")
@@ -46,9 +46,9 @@ final class InstallerDelegate: NSObject, NSApplicationDelegate {
             guard let resources = Bundle.main.resourceURL else { throw InstallFailure(message: "Installer resources are missing.") }
             let result = try PluginInstaller(resources: resources.appendingPathComponent("Plugins", isDirectory: true)).install()
             installed = true; button.title = "Close"
-            var message = "Restart MPC. In Preferences → Plugins, keep Use Audio Units checked and choose Rescan All. Select BASSBOXX as an AU instrument.\n\nYour standalone app was not changed."
+            var message = "Restart MPC. In Preferences → Plugins, keep Use Audio Units checked and choose Rescan All. Select TheFunkBoxx as an AU instrument.\n\nYour standalone app was not changed."
             if let backup = result.backup { message += "\n\nPrevious plugin copies: \(backup.path)" }
-            alert("BASSBOXX installed", message)
+            alert("TheFunkBoxx installed", message)
         } catch { alert("Installation stopped", error.localizedDescription) }
     }
 }

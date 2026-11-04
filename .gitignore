@@ -9,3 +9,5 @@
 *.pfx
 *.p8
 *.privatekey
+
+!Presets/ProHoeZak/*.bassboxx

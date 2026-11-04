@@ -7,7 +7,7 @@ static void word(std::ostream &out, unsigned value, int bytes) {
 }
 int main(int argc, char **argv) {
   const int sr = 48000, seconds = 8, count = sr * seconds;
-  std::ofstream out(argc > 1 ? argv[1] : "BASSBOXX-demo.wav", std::ios::binary);
+  std::ofstream out(argc > 1 ? argv[1] : "TheFunkBoxx-demo.wav", std::ios::binary);
   if (!out)
     return 1;
   out.write("RIFF", 4);

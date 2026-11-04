@@ -7,7 +7,7 @@
 int main(int argc, char** argv)
 {
     const bool scanOnly = argc == 3 && juce::String(argv[2]) == "--scan-only";
-    if (argc != 2 && !scanOnly) { std::cerr << "Usage: vst3_host_smoke /path/to/BASSBOXX.vst3 [--scan-only]\n"; return 2; }
+    if (argc != 2 && !scanOnly) { std::cerr << "Usage: vst3_host_smoke /path/to/TheFunkBoxx.vst3 [--scan-only]\n"; return 2; }
     const auto start = std::chrono::steady_clock::now();
     auto phase = [&](const char* name) {
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
@@ -21,7 +21,7 @@ int main(int argc, char** argv)
 
    #if BASSBOXX_HOST_AU
     juce::AudioUnitPluginFormat format;
-    const juce::String identifier = "AudioUnit:Synths/aumu,BsBx,PhZk";
+    const juce::String identifier = "AudioUnit:Synths/aumu,FnBx,PhZk";
    #else
     juce::VST3PluginFormat format;
     const juce::String identifier = bundle;
@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     if (descriptions.isEmpty()) { std::cerr << "FAIL: plugin factory not discoverable\n"; return 1; }
     for (auto* description : descriptions)
     {
-        if (!description->isInstrument || !description->name.containsIgnoreCase("BASSBOXX"))
+        if (!description->isInstrument || !description->name.containsIgnoreCase("TheFunkBoxx"))
             continue;
         if (scanOnly) {
             phase("PASS: instrument metadata scan completed without requesting an editor");
@@ -81,6 +81,6 @@ int main(int argc, char** argv)
         std::cout << "PASS: real plugin bundle discovery, instantiation, MIDI audio, state and editor\n";
         return 0;
     }
-    std::cerr << "FAIL: BASSBOXX plugin instrument not registered\n";
+    std::cerr << "FAIL: TheFunkBoxx plugin instrument not registered\n";
     return 1;
 }

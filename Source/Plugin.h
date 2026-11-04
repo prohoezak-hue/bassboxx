@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine.h"
+#include "UserPresets.h"
 #include <JuceHeader.h>
 class BassboxxProcessor final : public juce::AudioProcessor,
                                private juce::AudioProcessorValueTreeState::Listener {
@@ -21,11 +21,11 @@ public:
   void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
   juce::AudioProcessorEditor *createEditor() override;
   bool hasEditor() const override { return true; }
-  const juce::String getName() const override { return "BASSBOXX"; }
+  const juce::String getName() const override { return "TheFunkBoxx"; }
   bool acceptsMidi() const override { return true; }
   bool producesMidi() const override { return false; }
   double getTailLengthSeconds() const override { return 5; }
-  int getNumPrograms() override { return 100; }
+  int getNumPrograms() override { return bassboxx::programCount; }
   int getCurrentProgram() override { return program.load(); }
   void setCurrentProgram(int) override;
   const juce::String getProgramName(int) override;

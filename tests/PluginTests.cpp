@@ -10,6 +10,7 @@ static void check(bool ok, const char *msg) {
 int main(int argc, char **argv) {
   juce::ScopedJuceInitialiser_GUI gui;
   BassboxxProcessor p;
+  check(p.getName() == "TheFunkBoxx", "new product name");
   p.prepareToPlay(48000, 256);
   juce::AudioBuffer<float> audio(2, 256);
   juce::MidiBuffer midi;
@@ -27,18 +28,52 @@ int main(int argc, char **argv) {
     }
   }
   check(energy > 1, "processor renders MIDI audio");
-  check(p.getNumPrograms() == 100, "100 factory programs");
-  for (int i = 0; i < 100; ++i) {
+  check(p.getNumPrograms() == 125, "100 factory and 25 ProHoeZak programs");
+  for (int i = 0; i < p.getNumPrograms(); ++i) {
     p.setCurrentProgram(i);
     check(p.getCurrentProgram() == i, "program selection");
+    if (i >= bassboxx::factoryProgramCount) {
+      const auto presetFile = juce::File(__FILE__).getParentDirectory()
+          .getParentDirectory().getChildFile("Presets/ProHoeZak")
+          .getChildFile(p.getProgramName(i) + ".bassboxx");
+      juce::MemoryBlock original;
+      check(presetFile.loadFileAsData(original), "original user preset exists");
+      auto xml = juce::AudioProcessor::getXmlFromBinary(
+          original.getData(), int(original.getSize()));
+      check(xml != nullptr, "original user preset decodes");
+      auto tree = juce::ValueTree::fromXml(*xml);
+      check(tree.getNumChildren() == 24, "complete original user preset");
+      juce::MemoryBlock selected;
+      p.getStateInformation(selected);
+      auto selectedXml = juce::AudioProcessor::getXmlFromBinary(
+          selected.getData(), int(selected.getSize()));
+      check(selectedXml != nullptr, "selected preset state decodes");
+      check(selectedXml->getIntAttribute("polyVoices") == int(tree["polyVoices"]),
+            "user preset retains its remembered polyphony");
+      for (int child = 0; child < tree.getNumChildren(); ++child) {
+        auto parameter = tree.getChild(child);
+        auto *actual = p.state.getRawParameterValue(parameter["id"].toString());
+        check(actual != nullptr, "user preset parameter exists");
+        const float expected = float(parameter["value"]);
+        check(std::abs(actual->load() - expected) <= std::max(1e-5f, std::abs(expected) * 1e-6f),
+              "user preset retains its original parameter values");
+      }
+    }
   }
   juce::MemoryBlock saved;
   p.getStateInformation(saved);
   p.setCurrentProgram(2);
   p.setStateInformation(saved.getData(), int(saved.getSize()));
-  check(p.getCurrentProgram() == 99, "program restored");
-  check(p.state.getRawParameterValue("boost")->load() > .7f,
+  check(p.getCurrentProgram() == 124, "program restored");
+  check(std::abs(p.state.getRawParameterValue("boost")->load() -
+                     bassboxx::userPresets.back().patch.boost) < 1e-6f,
         "parameters restored");
+  p.setCurrentProgram(99);
+  p.getStateInformation(saved);
+  p.setCurrentProgram(100);
+  p.setStateInformation(saved.getData(), int(saved.getSize()));
+  check(p.getCurrentProgram() == 99 && p.getProgramName(99) == "100 Impact 10",
+        "existing factory state retains its program index");
   midi.addEvent(juce::MidiMessage::allSoundOff(1), 0);
   for (int block = 0; block < 100; ++block)
     p.processBlock(audio, midi);
@@ -66,12 +101,12 @@ int main(int argc, char **argv) {
   for (auto* control : {static_cast<juce::Component*>(previous), static_cast<juce::Component*>(next), static_cast<juce::Component*>(menu)})
     check(control->isVisible() && editor->getLocalBounds().contains(control->getBounds()), "sound browser controls visible");
   previous->onClick();
-  check(p.getCurrentProgram() == 99 && menu->getSelectedId() == 100, "up arrow wraps first sound to last and updates dropdown");
+  check(p.getCurrentProgram() == 124 && menu->getSelectedId() == 125, "up arrow wraps first sound to last and updates dropdown");
   next->onClick();
   check(p.getCurrentProgram() == 0 && menu->getSelectedId() == 1, "down arrow wraps last sound to first");
-  for (int i = 1; i <= 100; ++i) {
+  for (int i = 1; i <= p.getNumPrograms(); ++i) {
     next->onClick();
-    check(p.getCurrentProgram() == i % 100 && menu->getSelectedId() == i % 100 + 1, "arrows browse every factory sound in order");
+    check(p.getCurrentProgram() == i % p.getNumPrograms() && menu->getSelectedId() == i % p.getNumPrograms() + 1, "arrows browse every sound in order");
   }
   menu->setSelectedId(43, juce::sendNotificationSync);
   check(p.getCurrentProgram() == 42, "dropdown still selects sounds directly");

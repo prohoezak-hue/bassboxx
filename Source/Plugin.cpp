@@ -167,6 +167,9 @@ void BassboxxProcessor::processBlock(AudioBuffer<float> &b,
   events.clear();
 }
 const String BassboxxProcessor::getProgramName(int index) {
+  index = jlimit(0, bassboxx::programCount - 1, index);
+  if (index >= bassboxx::factoryProgramCount)
+    return bassboxx::userPresets[size_t(index - bassboxx::factoryProgramCount)].name;
   static const char *banks[] = {"Foundation", "Glide", "Acid",       "Pluck",
                                 "Sub",        "Fifth", "Atmosphere", "Vintage",
                                 "Lead",       "Impact"};
@@ -174,8 +177,9 @@ const String BassboxxProcessor::getProgramName(int index) {
          banks[jlimit(0, 99, index) / 10] + " " + String(index % 10 + 1);
 }
 void BassboxxProcessor::setCurrentProgram(int index) {
-  program = jlimit(0, 99, index);
-  auto p = bassboxx::factory(program.load());
+  const int selected = jlimit(0, bassboxx::programCount - 1, index);
+  program = selected;
+  auto p = bassboxx::programPatch(selected);
   auto set = [&](String id, float val) {
     auto *param = state.getParameter(id);
     param->setValueNotifyingHost(param->convertTo0to1(val));
@@ -201,6 +205,8 @@ void BassboxxProcessor::setCurrentProgram(int index) {
   set("filterDecay", p.filterDecay);
   set("filterSustain", p.filterSustain);
   set("filterRelease", p.filterRelease);
+  if (selected >= bassboxx::factoryProgramCount)
+    polyVoices.store(bassboxx::userPresets[size_t(selected - bassboxx::factoryProgramCount)].polyVoices);
 }
 void BassboxxProcessor::getStateInformation(MemoryBlock &dest) {
   auto tree = state.copyState();
@@ -214,7 +220,7 @@ void BassboxxProcessor::setStateInformation(const void *data, int size) {
   if (auto xml = getXmlFromBinary(data, size)) {
     auto tree = ValueTree::fromXml(*xml);
     if (tree.hasType("BASSBOXX")) {
-      program = jlimit(0, 99, int(tree.getProperty("program", 0)));
+      program = jlimit(0, bassboxx::programCount - 1, int(tree.getProperty("program", 0)));
       polyVoices.store(jlimit(2, 16, int(tree.getProperty("polyVoices", 8))));
       state.replaceState(tree);
     }

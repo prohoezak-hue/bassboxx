@@ -1,32 +1,32 @@
-BASSBOXX Audio Unit for macOS — same synth, skin, presets and controls
+TheFunkBoxx Audio Unit for macOS — same synth, skin, presets and controls
 
-MPC's screenshot showed Ignore/Skipped for both BASSBOXX VST3 copies and other
-VST3 plugins, with zero failed plugins. This did not establish a BASSBOXX crash
+MPC's screenshot showed Ignore/Skipped for both TheFunkBoxx VST3 copies and other
+VST3 plugins, with zero failed plugins. This did not establish a TheFunkBoxx crash
 or the reason for ignoring VST3. Use Audio Units was checked in MPC, so this ZIP
 provides an AU instrument as an alternate loading route. Actual MPC compatibility
 still requires a successful scan and playback on your Mac.
 
 INSTALL WITHOUT A PAID APPLE MEMBERSHIP
 1. Quit MPC. Extract this entire ZIP and keep the files together.
-2. Run "Build BASSBOXX on this Mac.command". It compiles fresh local output
+2. Run "Build TheFunkBoxx on this Mac.command". It compiles fresh local output
    using free Apple Command Line Tools and the included verified dependencies.
    If Apple's tools installer opens, finish it and run the builder again.
 3. Wait for "PASS: locally compiled, tested, installed and validated Audio Unit."
-   The installed file is ~/Library/Audio/Plug-Ins/Components/BASSBOXX.component.
+   The installed file is ~/Library/Audio/Plug-Ins/Components/TheFunkBoxx.component.
 4. Restart MPC. In Preferences > Plugins, leave Use Audio Units checked and
    choose Rescan All (the control shown in your screenshot).
-5. Add a plugin instrument track and look for BASSBOXX under Audio Units/AU.
+5. Add a plugin instrument track and look for TheFunkBoxx under Audio Units/AU.
    Test notes, the interface, presets, wheels, and saving/reopening a project.
 
 Do not add the .component to a VST folder. It uses macOS Audio Unit discovery.
 Your working standalone and VST3 are not replaced by this AU installer.
 
 The precompiled component is ad-hoc signed, not Apple Developer ID signed or
-notarized. "Install BASSBOXX.command" checks signatures and refuses a quarantined
+notarized. "Install TheFunkBoxx.command" checks signatures and refuses a quarantined
 bundle rejected by macOS. If macOS blocks a helper or new local output, stop and
 keep the exact message. No security policy or quarantine is changed or removed.
 The builder runs Apple auval and an actual AU host load/audio/state/editor check;
 these are not MPC certification. Physical MIDI/audio and MPC remain local tests.
 
-Build logs: ~/Library/Application Support/BASSBOXX/Local Builds/
-Backups: ~/Library/Application Support/BASSBOXX/Backups/
+Build logs: ~/Library/Application Support/TheFunkBoxx/Local Builds/
+Backups: ~/Library/Application Support/TheFunkBoxx/Backups/

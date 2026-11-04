@@ -2,7 +2,7 @@ if(NOT DEFINED APP OR NOT DEFINED REPORT)
  message(FATAL_ERROR "APP and REPORT are required")
 endif()
 file(REMOVE "${REPORT}")
-execute_process(COMMAND "${APP}/Contents/MacOS/BASSBOXX" --self-test "${REPORT}"
+execute_process(COMMAND "${APP}/Contents/MacOS/TheFunkBoxx" --self-test "${REPORT}"
  RESULT_VARIABLE result TIMEOUT 30)
 if(NOT "${result}" STREQUAL "0" OR NOT EXISTS "${REPORT}")
  message(FATAL_ERROR "Standalone launch/self-test failed: ${result}")
@@ -14,7 +14,7 @@ string(JSON width GET "${data}" editorWidth)
 string(JSON height GET "${data}" editorHeight)
 string(JSON energy GET "${data}" audioEnergy)
 string(JSON visible GET "${data}" windowVisible)
-if(NOT status STREQUAL "passed" OR NOT programs EQUAL 100 OR NOT width EQUAL 1100
+if(NOT status STREQUAL "passed" OR NOT programs EQUAL 125 OR NOT width EQUAL 1100
  OR NOT height EQUAL 800 OR NOT energy GREATER 1 OR NOT visible)
  message(FATAL_ERROR "Unexpected standalone result: ${data}")
 endif()

@@ -1,7 +1,7 @@
-name: Build BASSBOXX macOS app and VST3
+name: Build TheFunkBoxx macOS app and VST3
 on:
   push:
-    branches: [main, fix/vst3-host-load-validation]
+    branches: [main, fix/vst3-host-load-validation, feat/thefunkboxx]
     paths-ignore: ["**.md", "docs/**", "examples/**"]
   pull_request:
     paths-ignore: ["**.md", "docs/**", "examples/**"]
@@ -38,8 +38,8 @@ jobs:
         run: |
           python3 scripts/run-validator.py 180 build/validator-logs/native-installer.log bash scripts/build-native-installer.sh build/native-installer
           mkdir -p dist
-          ditto -c -k --sequesterRsrc --keepParent 'build/native-installer/Install BASSBOXX.app' dist/BASSBOXX-native-installer-build.zip
-          (cd dist && shasum -a 256 BASSBOXX-native-installer-build.zip > BASSBOXX-native-installer-build.zip.sha256)
+          ditto -c -k --sequesterRsrc --keepParent 'build/native-installer/Install TheFunkBoxx.app' dist/TheFunkBoxx-native-installer-build.zip
+          (cd dist && shasum -a 256 TheFunkBoxx-native-installer-build.zip > TheFunkBoxx-native-installer-build.zip.sha256)
       - uses: actions/checkout@v4
         with:
           repository: steinbergmedia/vst3sdk
@@ -73,15 +73,15 @@ jobs:
         run: |
           python3 scripts/run-validator.py 360 build/validator-logs/native-tests.log ctest --test-dir build -C Release --output-on-failure --timeout 120
           python3 scripts/run-validator.py 360 build/validator-logs/repeated-host-tests.log ctest --test-dir build -C Release --output-on-failure --repeat until-fail:3 -R 'vst3_scan|vst3_host_load|standalone'
-          python3 scripts/run-validator.py 120 build/validator-logs/editor-render.log build/plugin_tests "$RUNNER_TEMP/BASSBOXX-interface.png"
+          python3 scripts/run-validator.py 120 build/validator-logs/editor-render.log build/plugin_tests "$RUNNER_TEMP/TheFunkBoxx-interface.png"
           mkdir -p dist
-          cp "$RUNNER_TEMP/BASSBOXX-interface.png" dist/BASSBOXX-interface.png
+          cp "$RUNNER_TEMP/TheFunkBoxx-interface.png" dist/TheFunkBoxx-interface.png
       - name: Steinberg VST3 Validator
         if: ${{ !cancelled() && steps.validator-tools.outcome == 'success' && steps.plugin-build.outcome == 'success' }}
         run: |
           python3 scripts/run-validator.py 180 build/validator-logs/steinberg.log \
             "$RUNNER_TEMP/vst3sdk-build/bin/Release/validator" \
-            "$PWD/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
+            "$PWD/build/TheFunkBoxx_artefacts/Release/VST3/TheFunkBoxx.vst3"
       - name: pluginval strictness 5 (including editor tests)
         if: ${{ !cancelled() && steps.validator-tools.outcome == 'success' && steps.plugin-build.outcome == 'success' }}
         run: |
@@ -89,7 +89,7 @@ jobs:
             "$RUNNER_TEMP/pluginval-build/pluginval_artefacts/Release/pluginval.app/Contents/MacOS/pluginval" \
             --strictness-level 5 --random-seed 123456 --timeout-ms 30000 \
             --output-dir "$PWD/build/validator-logs/pluginval" \
-            --validate "$PWD/build/BASSBOXX_artefacts/Release/VST3/BASSBOXX.vst3"
+            --validate "$PWD/build/TheFunkBoxx_artefacts/Release/VST3/TheFunkBoxx.vst3"
       - name: Verify, sign, test installer, and package ZIP
         id: package
         run: python3 scripts/run-validator.py 1800 build/validator-logs/package.log bash scripts/package-macos.sh
@@ -97,40 +97,40 @@ jobs:
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         run: |
           python3 scripts/run-validator.py 180 build/validator-logs/local-steinberg.log \
-            "$RUNNER_TEMP/vst3sdk-build/bin/Release/validator" "$PWD/build/local-installed/BASSBOXX.vst3"
+            "$RUNNER_TEMP/vst3sdk-build/bin/Release/validator" "$PWD/build/local-installed/TheFunkBoxx.vst3"
       - name: pluginval on locally built and installed VST3
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         run: |
           python3 scripts/run-validator.py 600 build/validator-logs/local-pluginval-console.log \
             "$RUNNER_TEMP/pluginval-build/pluginval_artefacts/Release/pluginval.app/Contents/MacOS/pluginval" \
             --strictness-level 5 --random-seed 123456 --timeout-ms 30000 \
-            --output-dir "$PWD/build/validator-logs/local-pluginval" --validate "$PWD/build/local-installed/BASSBOXX.vst3"
+            --output-dir "$PWD/build/validator-logs/local-pluginval" --validate "$PWD/build/local-installed/TheFunkBoxx.vst3"
       - name: pluginval on registered Audio Unit
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         run: |
           python3 scripts/run-validator.py 600 build/validator-logs/au-pluginval.log \
             "$RUNNER_TEMP/pluginval-build/pluginval_artefacts/Release/pluginval.app/Contents/MacOS/pluginval" \
             --strictness-level 5 --random-seed 123456 --timeout-ms 30000 \
-            --output-dir "$PWD/build/validator-logs/au-pluginval" --validate 'AudioUnit:Synths/aumu,BsBx,PhZk'
+            --output-dir "$PWD/build/validator-logs/au-pluginval" --validate 'AudioUnit:Synths/aumu,FnBx,PhZk'
       - uses: actions/upload-artifact@v4
         with:
-          name: BASSBOXX-macOS-products
+          name: TheFunkBoxx-macOS-products
           path: |
-            dist/BASSBOXX-macOS-AU.zip
-            dist/BASSBOXX-macOS-AU.zip.sha256
-            dist/BASSBOXX-macOS-VST3.zip
-            dist/BASSBOXX-macOS-VST3.zip.sha256
-            dist/BASSBOXX-macOS-Standalone.zip
-            dist/BASSBOXX-macOS-Standalone.zip.sha256
-            dist/BASSBOXX-interface.png
-            dist/BASSBOXX-native-installer-build.zip
-            dist/BASSBOXX-native-installer-build.zip.sha256
+            dist/TheFunkBoxx-macOS-AU.zip
+            dist/TheFunkBoxx-macOS-AU.zip.sha256
+            dist/TheFunkBoxx-macOS-VST3.zip
+            dist/TheFunkBoxx-macOS-VST3.zip.sha256
+            dist/TheFunkBoxx-macOS-Standalone.zip
+            dist/TheFunkBoxx-macOS-Standalone.zip.sha256
+            dist/TheFunkBoxx-interface.png
+            dist/TheFunkBoxx-native-installer-build.zip
+            dist/TheFunkBoxx-native-installer-build.zip.sha256
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: BASSBOXX-macOS-test-evidence
+          name: TheFunkBoxx-macOS-test-evidence
           path: |
             build/Testing/Temporary/LastTest.log
             build/validator-logs/
@@ -139,7 +139,7 @@ jobs:
             build/standalone-extracted-report.json
             build/local-build-test-run.*/**/Build.log
             build/local-build-test-run.*/**/installed-standalone.json
-            ${{ runner.temp }}/BASSBOXX-interface.png
+            ${{ runner.temp }}/TheFunkBoxx-interface.png
           if-no-files-found: error
   engine:
     name: Portable DSP regression tests
@@ -153,14 +153,14 @@ jobs:
   publish:
     name: Publish downloadable app and plugin
     needs: [mac, engine]
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation') && github.event_name != 'pull_request'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation' || github.ref == 'refs/heads/feat/thefunkboxx') && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: BASSBOXX-macOS-products
+          name: TheFunkBoxx-macOS-products
           path: dist
       - name: Publish tested ZIP as a versioned development release
         env:
@@ -172,31 +172,26 @@ jobs:
           set -euo pipefail
           tag="macos-${BUILD_SHA:0:12}"
           cat > release-notes.md <<EOF_NOTES
-          BASSBOXX by ProHoeZak — standalone macOS synthesizer, AU and VST3 instruments.
+          TheFunkBoxx 1.3.0 by ProHoeZak — standalone, AU and VST3 for macOS 11+, Apple Silicon and Intel.
 
-          **Standalone app:** download **BASSBOXX-macOS-Standalone.zip**, extract the whole folder, and open **BASSBOXX.app**. MPC is not required. Choose **Options > Audio/MIDI Settings** for your output device and MIDI controller; the original on-screen keyboard also works.
-          **Local build/install:** the standalone ZIP includes **Build BASSBOXX on this Mac.command**. It builds the original instrument using free Apple Command Line Tools and the included verified dependencies, runs the tests, and installs the app in your home Applications folder. No paid Apple membership or code editing is needed. If Apple's tools installer opens, complete it and rerun the builder.
-          **Audio Unit for MPC:** download **BASSBOXX-macOS-AU.zip**. Quit MPC, extract the whole folder, and follow Installation.txt. The free local-build helper installs BASSBOXX.component in your user Audio Units folder and runs Apple's auval plus actual AU hosting checks. Restart MPC, leave **Use Audio Units** checked, choose **Rescan All**, and look for BASSBOXX as an AU instrument. This alternate format addresses the reported Ignore/Skipped VST3 scan route; a successful MPC scan and playback are still required before claiming compatibility.
-          **VST3:** the separate **BASSBOXX-macOS-VST3.zip** is for MPC/other VST3 hosts and retains the VST3 local-build route.
+          Black textured panel, cream trim and brushed silver knobs, with 125 built-in sounds: the original 100 factory programs plus 25 original ProHoeZak presets. All original synthesis controls, Mono/Poly legato, pitch/mod wheels, hardware MIDI, automation, state recall and .bassboxx patch compatibility are retained.
 
-          New in 1.2.0: a native AU instrument using the same editor and processor, with Apple auval and actual AU MIDI/audio/state/editor validation. The 1.1.1 features are retained: dark wood and gold panel styled after the supplied design, up/down sound browsing arrows immediately before the factory dropdown (with wraparound), Poly/Mono switch with last-note legato, spring-return ±2-semitone pitch wheel, and a hold-position modulation wheel for 5 Hz vibrato (up to ±0.5 semitone). Hardware MIDI pitch bend and CC1 are supported. The original synthesis controls and 100 factory patch definitions remain available. Mono uses one voice; switching back restores the chosen poly voice count. Live wheel positions are not saved into patches.
+          Download TheFunkBoxx-macOS-Standalone.zip for the standalone app, TheFunkBoxx-macOS-AU.zip for Audio Units, or TheFunkBoxx-macOS-VST3.zip for VST3. Extract the whole folder and follow Installation.txt. The separate notarized DMG release provides the signed standalone and native AU/VST3 installer when Apple acceptance completes.
 
-          Universal arm64/x86_64, macOS 11+. CI passed engine/processor/VST3 scan/host tests, real standalone application launch with visible original editor and MIDI stereo rendering, Steinberg VST3 Validator and pluginval, installer/upgrade and quarantine/tamper rejection tests for both products, extracted-app startup, and the packaged local app build/install route. The AU also passed Apple's auval and pluginval after registry installation. The existing factory timbres and controls are preserved, with the new vintage skin and performance controls. The attached BASSBOXX-interface.png is rendered from the real editor.
-
-          All downloads are ad-hoc signed development builds, not Developer ID signed/notarized. A standalone app does not fix Apple's distribution trust rejection. macOS may block the app/helper; if it does, stop and retain the exact message. No quarantine or security protections are removed or disabled. Live playback, hardware MIDI and policy behavior on your own Mac require local testing. MPC 3.10 compatibility remains unverified for the VST3; the standalone app does not use MPC.
+          These ZIPs are ad-hoc signed development builds. Do not bypass macOS security protections if blocked. The screenshot is rendered from the real editor. Universal builds, DSP/processor/state/editor regressions, actual AU/VST3 hosting, standalone startup, Apple auval, Steinberg Validator, pluginval and packaging/install checks passed before publication. MPC playback and project recall still need testing on your Mac.
 
           Source commit: ${BUILD_SHA}
           EOF_NOTES
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/BASSBOXX-macOS-*.zip dist/BASSBOXX-macOS-*.zip.sha256 dist/BASSBOXX-interface.png --clobber
+            gh release upload "$tag" dist/TheFunkBoxx-macOS-*.zip dist/TheFunkBoxx-macOS-*.zip.sha256 dist/TheFunkBoxx-interface.png --clobber
           else
-            gh release create "$tag" dist/BASSBOXX-macOS-*.zip dist/BASSBOXX-macOS-*.zip.sha256 dist/BASSBOXX-interface.png --target "$BUILD_SHA" --title "BASSBOXX macOS standalone and VST3 ${BUILD_SHA:0:7}" --prerelease --latest=false --notes-file release-notes.md
+            gh release create "$tag" dist/TheFunkBoxx-macOS-*.zip dist/TheFunkBoxx-macOS-*.zip.sha256 dist/TheFunkBoxx-interface.png --target "$BUILD_SHA" --title "TheFunkBoxx macOS standalone and VST3 ${BUILD_SHA:0:7}" --prerelease --latest=false --notes-file release-notes.md
           fi
-          echo "Download: https://github.com/${GH_REPO}/releases/download/${tag}/BASSBOXX-macOS-Standalone.zip" >> "$GITHUB_STEP_SUMMARY"
+          echo "Download: https://github.com/${GH_REPO}/releases/download/${tag}/TheFunkBoxx-macOS-Standalone.zip" >> "$GITHUB_STEP_SUMMARY"
   developer_id:
     name: Sign and notarize Mac installer app
     needs: [mac, engine]
-    if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[notarize]'))) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation')
+    if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[notarize]'))) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation' || github.ref == 'refs/heads/feat/thefunkboxx')
     runs-on: macos-14
     timeout-minutes: 90
     permissions:
@@ -205,7 +200,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: BASSBOXX-macOS-products
+          name: TheFunkBoxx-macOS-products
           path: validated-artifacts
       - name: Developer ID signing, notarization and native installer verification
         env:
@@ -218,7 +213,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: BASSBOXX-Developer-ID-evidence
+          name: TheFunkBoxx-Developer-ID-evidence
           path: |
             signed-dist/notarization*.json
             build/native-installer/smoke.json
@@ -232,95 +227,18 @@ jobs:
           set -euo pipefail
           tag="developer-id-${GITHUB_SHA:0:12}"
           cat > signed-release-notes.md <<'NOTES'
-          BASSBOXX AU and VST3 for macOS 11+, Apple Silicon and Intel.
+          TheFunkBoxx 1.3.0 — AU, VST3 and standalone for macOS 11+, Apple Silicon and Intel.
 
-          Download BASSBOXX-macOS-Installer.dmg, open it, then open Install BASSBOXX.app and click Install. Quit MPC first. The app installs AU/VST3 into your user Library/Audio/Plug-Ins folders and backs up previous copies. The standalone app is not changed. No private-key setup, command-file helper, administrator password or local compilation is required on the receiving Mac.
+          Black textured panel, cream trim, brushed silver knobs, and 125 sounds including 25 original ProHoeZak presets. Existing synthesis, parameter IDs and .bassboxx patch compatibility are retained.
 
-          The installer app, plugins and disk image are Developer ID Application signed for team 5QF6Q5ATG5. Apple accepted the app and disk image for notarization; their tickets are stapled and Gatekeeper assessments passed. Native installer tests cover first install, upgrade backups, signature rejection, rollback after a partial installation and preservation of unrelated files. The existing engine, processor, standalone, AU/VST3 hosting, Apple auval, Steinberg Validator and pluginval regressions passed first.
+          Download TheFunkBoxx-macOS-Installer.dmg, open it, then open Install TheFunkBoxx.app and click Install. Quit MPC first. The app installs AU/VST3 into your user Library/Audio/Plug-Ins folders and backs up previous copies. For standalone, drag the included TheFunkBoxx.app into Applications and open it. Existing BASSBOXX installations are left in place. No private-key setup, command-file helper, administrator password or local compilation is required on the receiving Mac.
 
-          Restart MPC, keep Use Audio Units checked and choose Rescan All. Select BASSBOXX as an AU instrument. MPC scanning, playback and project recall still require verification on your Mac; notarization is not MPC certification.
+          The installer app, plugins and disk image are Developer ID Application signed for team 5QF6Q5ATG5. Apple accepted the installer, standalone app and disk image for notarization; their tickets are stapled and Gatekeeper assessments passed. Native installer tests cover first install, upgrade backups, signature rejection, rollback after a partial installation and preservation of unrelated files. The existing engine, processor, standalone, AU/VST3 hosting, Apple auval, Steinberg Validator and pluginval regressions passed first.
+
+          Restart MPC, keep Use Audio Units checked and choose Rescan All. Select TheFunkBoxx as an AU instrument. MPC scanning, playback and project recall still require verification on your Mac; notarization is not MPC certification.
           NOTES
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" signed-dist/BASSBOXX-macOS-Installer.dmg signed-dist/BASSBOXX-macOS-Installer.dmg.sha256 signed-dist/Build-info.json --clobber
+            gh release upload "$tag" signed-dist/TheFunkBoxx-macOS-Installer.dmg signed-dist/TheFunkBoxx-macOS-Installer.dmg.sha256 signed-dist/Build-info.json signed-dist/TheFunkBoxx-interface.png --clobber
           else
-            gh release create "$tag" signed-dist/BASSBOXX-macOS-Installer.dmg signed-dist/BASSBOXX-macOS-Installer.dmg.sha256 signed-dist/Build-info.json --target "$GITHUB_SHA" --title 'BASSBOXX notarized Mac installer' --prerelease --latest=false --notes-file signed-release-notes.md
-          fi
-
-  installer_repair:
-    name: Repair and notarize installer from validated synth build
-    needs: [engine]
-    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[notarize]') && contains(github.event.head_commit.message, '[installer-only]') && github.ref == 'refs/heads/fix/vst3-host-load-validation'
-    runs-on: macos-14
-    timeout-minutes: 90
-    permissions:
-      contents: write
-      actions: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Verify the previously validated instrument source and Mac tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          validated_sha="$(git rev-parse 85c360b)"
-          actual_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/41793829620" --jq '.head_sha')"
-          [[ "$actual_sha" == "$validated_sha" ]]
-          result="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/41793829620/jobs" --jq '.jobs[] | select(.name == "Universal macOS app, VST3, tests and ZIPs") | .conclusion')"
-          [[ "$result" == success ]]
-          git diff --exit-code "$validated_sha" -- CMakeLists.txt Source tests/EngineTests.cpp tests/PluginTests.cpp tests/VST3HostSmoke.cpp tests/StandaloneSmoke.cmake tests/InstallerTests.sh scripts/package-macos.sh scripts/prepare-local-build-payload.sh scripts/run-validator.py 'packaging/*.command'
-          echo "BASSBOXX_VALIDATED_SOURCE_SHA=$validated_sha" >> "$GITHUB_ENV"
-          echo "Reusing unchanged instrument binaries from the successful Mac validation in run 41793829620. Native installer tests run again below."
-      - uses: actions/download-artifact@v4
-        with:
-          name: BASSBOXX-macOS-products
-          path: validated-artifacts
-          run-id: 41793829620
-          github-token: ${{ github.token }}
-      - name: Rebuild and test only the changed native installer
-        run: |
-          python3 scripts/run-validator.py 180 build/validator-logs/native-installer-repair.log bash scripts/build-native-installer.sh build/native-installer
-          rm -f validated-artifacts/BASSBOXX-native-installer-build.zip
-          ditto -c -k --sequesterRsrc --keepParent 'build/native-installer/Install BASSBOXX.app' validated-artifacts/BASSBOXX-native-installer-build.zip
-          (cd validated-artifacts && shasum -a 256 BASSBOXX-native-installer-build.zip > BASSBOXX-native-installer-build.zip.sha256)
-      - name: Developer ID signing, notarization and native installer verification
-        env:
-          MAC_APPLICATION_P12_BASE64: ${{ secrets.MAC_APPLICATION_P12_BASE64 }}
-          MAC_APPLICATION_P12_PASSWORD: ${{ secrets.MAC_APPLICATION_P12_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-        run: bash scripts/package-developer-id.sh validated-artifacts signed-dist
-      - name: Retain notarization evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: BASSBOXX-Developer-ID-evidence
-          path: |
-            build/validator-logs/native-installer-repair.log
-            signed-dist/installer-integration.log
-            signed-dist/notarization*.json
-            build/native-installer/smoke.json
-            signed-dist/Build-info.json
-          if-no-files-found: ignore
-      - name: Publish accepted and stapled installer
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          tag="developer-id-${GITHUB_SHA:0:12}"
-          cat > signed-release-notes.md <<'NOTES'
-          BASSBOXX AU and VST3 for macOS 11+, Apple Silicon and Intel.
-
-          Download BASSBOXX-macOS-Installer.dmg, open it, then open Install BASSBOXX.app and click Install. Quit MPC first. The app installs AU/VST3 into your user Library/Audio/Plug-Ins folders and backs up previous copies. The standalone app is not changed. No private-key setup, command-file helper, administrator password or local compilation is required on the receiving Mac.
-
-          The installer app, plugins and disk image are Developer ID Application signed for team 5QF6Q5ATG5. Apple accepted the app and disk image for notarization; their tickets are stapled and Gatekeeper assessments passed. Native installer tests cover first install, upgrade backups, signature rejection, rollback after a partial installation and preservation of unrelated files. The unchanged instrument binaries previously passed the existing engine, processor, standalone, AU/VST3 hosting, Apple auval, Steinberg Validator and pluginval regressions in run 41793829620. This repair rebuilds/tests only the changed installer; the workflow verifies that instrument sources and validation scripts are unchanged before reusing those artifacts.
-
-          Restart MPC, keep Use Audio Units checked and choose Rescan All. Select BASSBOXX as an AU instrument. MPC scanning, playback and project recall still require verification on your Mac; notarization is not MPC certification.
-          NOTES
-          if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" signed-dist/BASSBOXX-macOS-Installer.dmg signed-dist/BASSBOXX-macOS-Installer.dmg.sha256 signed-dist/Build-info.json --clobber
-          else
-            gh release create "$tag" signed-dist/BASSBOXX-macOS-Installer.dmg signed-dist/BASSBOXX-macOS-Installer.dmg.sha256 signed-dist/Build-info.json --target "$GITHUB_SHA" --title 'BASSBOXX notarized Mac installer' --prerelease --latest=false --notes-file signed-release-notes.md
+            gh release create "$tag" signed-dist/TheFunkBoxx-macOS-Installer.dmg signed-dist/TheFunkBoxx-macOS-Installer.dmg.sha256 signed-dist/Build-info.json signed-dist/TheFunkBoxx-interface.png --target "$GITHUB_SHA" --title 'TheFunkBoxx notarized Mac installer' --prerelease --latest=false --notes-file signed-release-notes.md
           fi

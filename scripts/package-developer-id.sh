@@ -34,7 +34,7 @@ cleanup() {
 trap cleanup EXIT
 on_error() {
  local status=$?
- echo "::error::BASSBOXX distribution failed during: $stage (exit $status). No signed release was published."
+ echo "::error::TheFunkBoxx distribution failed during: $stage (exit $status). No signed release was published."
 }
 trap on_error ERR
 set -E
@@ -76,33 +76,34 @@ PY
 application_identity="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["application"]["hash"])' "$work/selected.json")"
 # Store credentials only inside the temporary keychain, which is deleted on exit.
 stage="Authenticate Apple notarization account"
-if ! xcrun notarytool store-credentials BASSBOXX-distribution --keychain "$keychain" --apple-id "$APPLE_ID" --team-id "$team_id" --password "$APPLE_APP_SPECIFIC_PASSWORD" > "$work/authentication.log" 2>&1; then
+if ! xcrun notarytool store-credentials TheFunkBoxx-distribution --keychain "$keychain" --apple-id "$APPLE_ID" --team-id "$team_id" --password "$APPLE_APP_SPECIFIC_PASSWORD" > "$work/authentication.log" 2>&1; then
  echo '::error::Apple notarization authentication failed. Check APPLE_ID and APPLE_APP_SPECIFIC_PASSWORD in GitHub; no certificate files need changing.'
  exit 1
 fi
 stage="Verify validated build artifacts"
 validated_source="${BASSBOXX_VALIDATED_SOURCE_SHA:-$GITHUB_SHA}"
 [[ "$validated_source" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid validated instrument source commit'; exit 1; }
-for archive in BASSBOXX-macOS-AU.zip BASSBOXX-macOS-VST3.zip BASSBOXX-native-installer-build.zip; do
+for archive in TheFunkBoxx-macOS-AU.zip TheFunkBoxx-macOS-VST3.zip TheFunkBoxx-macOS-Standalone.zip TheFunkBoxx-native-installer-build.zip; do
  (cd "$artifacts" && /usr/bin/shasum -a 256 -c "$archive.sha256")
  /usr/bin/ditto -x -k "$artifacts/$archive" "$work/extracted"
 done
-au="$work/extracted/BASSBOXX-AU/BASSBOXX.component"
-vst3="$work/extracted/BASSBOXX-macOS/BASSBOXX.vst3"
-for folder in BASSBOXX-AU BASSBOXX-macOS; do
+au="$work/extracted/TheFunkBoxx-AU/TheFunkBoxx.component"
+vst3="$work/extracted/TheFunkBoxx-macOS/TheFunkBoxx.vst3"
+standalone="$work/extracted/TheFunkBoxx-Standalone/TheFunkBoxx.app"
+for folder in TheFunkBoxx-AU TheFunkBoxx-macOS TheFunkBoxx-Standalone; do
  /usr/bin/grep -Fx "Source commit: $validated_source" "$work/extracted/$folder/Build-info.txt" >/dev/null
 done
-app="$work/extracted/Install BASSBOXX.app"
+app="$work/extracted/Install TheFunkBoxx.app"
 /usr/bin/codesign --verify --deep --strict "$app"
-[[ "$(/usr/libexec/PlistBuddy -c 'Print :BASSBOXXSourceCommit' "$app/Contents/Info.plist")" == "$GITHUB_SHA" ]] || { echo 'Installer source commit mismatch'; exit 1; }
+[[ "$(/usr/libexec/PlistBuddy -c 'Print :TheFunkBoxxSourceCommit' "$app/Contents/Info.plist")" == "$GITHUB_SHA" ]] || { echo 'Installer source commit mismatch'; exit 1; }
 plugins="$app/Contents/Resources/Plugins"
 mkdir -p "$plugins"
-/usr/bin/ditto "$au" "$plugins/BASSBOXX.component"
-/usr/bin/ditto "$vst3" "$plugins/BASSBOXX.vst3"
+/usr/bin/ditto "$au" "$plugins/TheFunkBoxx.component"
+/usr/bin/ditto "$vst3" "$plugins/TheFunkBoxx.vst3"
 stage="Developer ID signing of plugins"
-for product in "$plugins/BASSBOXX.component" "$plugins/BASSBOXX.vst3"; do
+for product in "$plugins/TheFunkBoxx.component" "$plugins/TheFunkBoxx.vst3" "$standalone"; do
  /usr/bin/codesign --verify --deep --strict "$product"
- /usr/bin/lipo "$product/Contents/MacOS/BASSBOXX" -verify_arch arm64 x86_64
+ /usr/bin/lipo "$product/Contents/MacOS/TheFunkBoxx" -verify_arch arm64 x86_64
  /usr/bin/codesign --force --sign "$application_identity" --keychain "$keychain" --options runtime --timestamp "$product"
  /usr/bin/codesign --verify --deep --strict "$product"
  metadata="$(/usr/bin/codesign -dv --verbose=4 "$product" 2>&1)"
@@ -119,14 +120,14 @@ python3 scripts/run-validator.py 90 "$output/installer-integration.log" "$work/s
 stage="Developer ID signing of native installer app"
 /usr/bin/codesign --force --sign "$application_identity" --keychain "$keychain" --options runtime --timestamp "$app"
 /usr/bin/codesign --verify --deep --strict "$app"
-/usr/bin/lipo "$app/Contents/MacOS/InstallBASSBOXX" -verify_arch arm64 x86_64
+/usr/bin/lipo "$app/Contents/MacOS/InstallTheFunkBoxx" -verify_arch arm64 x86_64
 notarize() {
  local product="$1" label="$2" result=0 submission_id
  stage="Apple notarization: $label"
- xcrun notarytool submit "$product" --keychain-profile BASSBOXX-distribution --keychain "$keychain" --wait --timeout 30m --output-format json > "$output/notarization-$label.json" || result=$?
+ xcrun notarytool submit "$product" --keychain-profile TheFunkBoxx-distribution --keychain "$keychain" --wait --timeout 30m --output-format json > "$output/notarization-$label.json" || result=$?
  submission_id="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1])).get("id",""))' "$output/notarization-$label.json" 2>/dev/null || true)"
  if [[ "$submission_id" =~ ^[0-9a-fA-F-]{36}$ ]]; then
-  xcrun notarytool log "$submission_id" --keychain-profile BASSBOXX-distribution --keychain "$keychain" "$output/notarization-$label-log.json" || true
+  xcrun notarytool log "$submission_id" --keychain-profile TheFunkBoxx-distribution --keychain "$keychain" "$output/notarization-$label-log.json" || true
  fi
  [[ "$result" == 0 ]] || { echo "::error::Apple notarization for $label did not complete successfully; see notarization evidence."; return 1; }
  python3 - "$output/notarization-$label.json" <<'PY_ACCEPT'
@@ -137,6 +138,12 @@ if result.get('status')!='Accepted' or not re.fullmatch(r'[0-9a-fA-F-]{36}',resu
 print('Apple notarization accepted.')
 PY_ACCEPT
 }
+stage="Notarize standalone application"
+/usr/bin/ditto -c -k --sequesterRsrc --keepParent "$standalone" "$work/standalone-app.zip"
+notarize "$work/standalone-app.zip" standalone
+xcrun stapler staple -v "$standalone"
+xcrun stapler validate -v "$standalone"
+/usr/sbin/spctl --assess --type execute --verbose=2 "$standalone"
 /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$app" "$work/installer-app.zip"
 notarize "$work/installer-app.zip" app
 stage="Staple and assess native installer app"
@@ -144,20 +151,26 @@ xcrun stapler staple -v "$app"
 xcrun stapler validate -v "$app"
 /usr/sbin/spctl --assess --type execute --verbose=2 "$app"
 mkdir "$work/dmg-root"
-/usr/bin/ditto "$app" "$work/dmg-root/Install BASSBOXX.app"
-cp "$work/extracted/BASSBOXX-AU/JUCE-LICENSE.md" "$work/dmg-root/"
+/usr/bin/ditto "$app" "$work/dmg-root/Install TheFunkBoxx.app"
+/usr/bin/ditto "$standalone" "$work/dmg-root/TheFunkBoxx.app"
+/usr/bin/ditto "$work/extracted/TheFunkBoxx-Standalone/BassBoxx Presets" "$work/dmg-root/ProHoeZak Presets"
+cp "$work/extracted/TheFunkBoxx-AU/JUCE-LICENSE.md" "$work/dmg-root/"
+cp "$artifacts/TheFunkBoxx-interface.png" "$work/dmg-root/"
+cp "$artifacts/TheFunkBoxx-interface.png" "$output/"
 cat > "$work/dmg-root/Read Me.txt" <<EOF_README
-BASSBOXX by ProHoeZak — notarized plugin installer
-Open Install BASSBOXX.app and click Install. No certificate setup or local build
+TheFunkBoxx by ProHoeZak — notarized plugin installer
+Open Install TheFunkBoxx.app and click Install. No certificate setup or local build
 is required. It installs AU/VST3 into your own Library/Audio/Plug-Ins folders,
-backs up previous copies, and leaves the working standalone app unchanged.
+backs up previous TheFunkBoxx copies. For standalone, drag TheFunkBoxx.app
+to Applications and open it. Existing BASSBOXX installations are left in place.
+The 125 sounds are built into all three formats; original patch files are included.
 Restart MPC, keep Use Audio Units enabled, and choose Rescan All.
 MPC compatibility still requires a successful scan, playback and project recall.
 Source: https://github.com/prohoezak-hue/bassboxx/tree/$GITHUB_SHA
 EOF_README
 stage="Create and sign disk image"
-dmg="$output/BASSBOXX-macOS-Installer.dmg"
-/usr/bin/hdiutil create -volname 'Install BASSBOXX' -srcfolder "$work/dmg-root" -fs HFS+ -format UDZO "$dmg"
+dmg="$output/TheFunkBoxx-macOS-Installer.dmg"
+/usr/bin/hdiutil create -volname 'Install TheFunkBoxx' -srcfolder "$work/dmg-root" -fs HFS+ -format UDZO "$dmg"
 /usr/bin/codesign --sign "$application_identity" --keychain "$keychain" --timestamp "$dmg"
 /usr/bin/codesign --verify --strict "$dmg"
 notarize "$dmg" dmg
@@ -165,10 +178,10 @@ stage="Staple and assess disk image"
 xcrun stapler staple -v "$dmg"
 xcrun stapler validate -v "$dmg"
 /usr/sbin/spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
-(cd "$output" && /usr/bin/shasum -a 256 BASSBOXX-macOS-Installer.dmg > BASSBOXX-macOS-Installer.dmg.sha256)
+(cd "$output" && /usr/bin/shasum -a 256 TheFunkBoxx-macOS-Installer.dmg > TheFunkBoxx-macOS-Installer.dmg.sha256)
 python3 - "$output/Build-info.json" "$GITHUB_SHA" "$team_id" "$version" "$output/notarization-app.json" "$output/notarization-dmg.json" "$validated_source" <<'PY_MANIFEST'
 import json,sys
-json.dump(dict(source_commit=sys.argv[2],instrument_source_commit=sys.argv[7],team_id=sys.argv[3],version=sys.argv[4],notarization_status='Accepted',app_submission=json.load(open(sys.argv[5]))['id'],dmg_submission=json.load(open(sys.argv[6]))['id'],products=['AU','VST3'],distribution='native-installer-app-dmg',mpc_compatibility='Unverified'),open(sys.argv[1],'w'),indent=2)
+json.dump(dict(source_commit=sys.argv[2],instrument_source_commit=sys.argv[7],team_id=sys.argv[3],version=sys.argv[4],notarization_status='Accepted',app_submission=json.load(open(sys.argv[5]))['id'],dmg_submission=json.load(open(sys.argv[6]))['id'],products=['AU','VST3','Standalone'],distribution='native-installer-app-dmg',mpc_compatibility='Unverified'),open(sys.argv[1],'w'),indent=2)
 PY_MANIFEST
 stage="Complete"
 echo 'PASS: native installer app and plugins signed, app and DMG accepted by Apple, tickets stapled/validated, Gatekeeper assessments passed.'

@@ -1,4 +1,4 @@
-#include "Engine.h"
+#include "UserPresets.h"
 #include <cstdlib>
 #include <iostream>
 static void check(bool ok, const char *what) {
@@ -35,9 +35,9 @@ int main() {
     for (int i = 0; i < int(rate * 6); ++i)
       e.sample();
     check(std::abs(e.sample()) < 1e-6, "pedal release ends note");
-    for (int preset = 0; preset < 100; ++preset) {
+    for (int preset = 0; preset < bassboxx::programCount; ++preset) {
       e.reset();
-      e.patch = bassboxx::factory(preset);
+      e.patch = bassboxx::programPatch(preset);
       for (int n = 24; n < 48; ++n)
         e.noteOn(n, .8f);
       energy = 0;
@@ -171,6 +171,6 @@ int main() {
     previous = next;
   }
   check(minHz > 210 && maxHz < 230 && maxHz - minHz > 8, "mod wheel oscillates around original pitch with bounded depth");
-  std::cout << "PASS: 3 sample rates, 100 presets each, audio, release, pedal, "
+  std::cout << "PASS: 3 sample rates, 125 presets each, audio, release, pedal, "
                "voice stealing, panic, Bass Boost, mono/poly, last-note return and CC1 vibrato\n";
 }

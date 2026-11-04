@@ -14,7 +14,7 @@ final class PluginInstaller {
     private let verify: (URL) throws -> Void
     private let move: (URL, URL) throws -> Void
     private let fm = FileManager.default
-    private let products = [("BASSBOXX.component", "Components"), ("BASSBOXX.vst3", "VST3")]
+    private let products = [("TheFunkBoxx.component", "Components"), ("TheFunkBoxx.vst3", "VST3")]
     init(resources: URL, home: URL = FileManager.default.homeDirectoryForCurrentUser) {
         self.resources = resources
         self.home = home
@@ -42,8 +42,8 @@ final class PluginInstaller {
     private func checkIdentity(_ bundle: URL) throws {
         let data = try Data(contentsOf: bundle.appendingPathComponent("Contents/Info.plist"))
         let value = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
-        guard let info = value as? [String: Any], info["CFBundleIdentifier"] as? String == "com.prohoezak.bassboxx" else {
-            throw InstallFailure(message: "A different product uses the BASSBOXX filename at \(bundle.path). It was left untouched.")
+        guard let info = value as? [String: Any], info["CFBundleIdentifier"] as? String == "com.prohoezak.thefunkboxx" else {
+            throw InstallFailure(message: "A different product uses the TheFunkBoxx filename at \(bundle.path). It was left untouched.")
         }
     }
     func install() throws -> InstallResult {
@@ -51,7 +51,7 @@ final class PluginInstaller {
         var entries: [Entry] = []
         var backups: [(URL, URL)] = []
         var installed: [URL] = []
-        let backup = home.appendingPathComponent("Library/Application Support/BASSBOXX/Backups/Installer-\(UUID().uuidString)", isDirectory: true)
+        let backup = home.appendingPathComponent("Library/Application Support/TheFunkBoxx/Backups/Installer-\(UUID().uuidString)", isDirectory: true)
         defer { for entry in entries { try? fm.removeItem(at: entry.staged) } }
         // Stage and verify both products before changing any previous installation.
         for (name, folder) in products {

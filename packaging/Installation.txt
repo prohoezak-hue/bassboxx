@@ -1,8 +1,8 @@
-BASSBOXX by ProHoeZak — local macOS VST3 development installation
+TheFunkBoxx by ProHoeZak — local macOS VST3 development installation
 
 FREE LOCAL-BUILD INSTALLATION (no paid Apple membership)
 1. Quit MPC. Extract the entire ZIP and keep all files together.
-2. Double-click "Build BASSBOXX on this Mac.command".
+2. Double-click "Build TheFunkBoxx on this Mac.command".
    If it opens Apple's free Command Line Tools installer, finish that setup,
    then double-click the builder again. No code editing or Homebrew is needed.
 3. Allow several minutes and several GB of disk space. Wait for:
@@ -12,9 +12,9 @@ FREE LOCAL-BUILD INSTALLATION (no paid Apple membership)
    backs up an existing plugin, and checks the newly installed VST3 through a host.
 4. Restart MPC 3.10 and enable/rescan your user VST3 folder:
    ~/Library/Audio/Plug-Ins/VST3/
-   If BASSBOXX was previously failed, use MPC's rescan/retry controls. Menu names
+   If TheFunkBoxx was previously failed, use MPC's rescan/retry controls. Menu names
    vary. Do not delete MPC settings or projects.
-5. Add a plugin track, select BASSBOXX, enable MIDI monitoring, choose your audio
+5. Add a plugin track, select TheFunkBoxx, enable MIDI monitoring, choose your audio
    device and play at low volume. Test saving/reopening your MPC project too.
 
 If macOS blocks the helper or locally compiled plugin, STOP and retain its exact
@@ -25,7 +25,7 @@ WHAT THIS DOES AND DOES NOT SOLVE
 The included precompiled VST3 is ad-hoc signed, not Developer ID signed/notarized.
 A valid codesign result proves integrity, not Apple's approval for downloaded
 software. With quarantine present, spctl can correctly reject this binary.
-"Install BASSBOXX.command" refuses a quarantined/rejected bundle before replacing
+"Install TheFunkBoxx.command" refuses a quarantined/rejected bundle before replacing
 an older installation. Copying it manually or re-signing it is not a trust fix.
 
 The free route compiles NEW code locally from the original source and signs only
@@ -37,9 +37,9 @@ local development code. Public Developer ID distribution requires the appropriat
 paid Apple membership and credentials; a free account cannot supply that.
 
 An older installation is backed up under:
-~/Library/Application Support/BASSBOXX/Backups/
+~/Library/Application Support/TheFunkBoxx/Backups/
 Builds and logs are retained under:
-~/Library/Application Support/BASSBOXX/Local Builds/
+~/Library/Application Support/TheFunkBoxx/Local Builds/
 The builder prints the exact Build.log path. It does not send logs anywhere.
 
 STILL NEEDS TESTING INSIDE MPC 3.10

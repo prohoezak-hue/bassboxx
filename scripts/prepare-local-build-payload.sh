@@ -25,11 +25,11 @@ fetch_verified \
  "$cache/JUCE-8.0.6.tar.gz"
 cp "$cache/cmake-3.31.10-macos-universal.dmg" "$cache/JUCE-8.0.6.tar.gz" "$bundle/LocalBuild/"
 # Exactly this commit's existing instrument and tests; exclude worktree caches.
-git archive --format=tar HEAD CMakeLists.txt Source tests | gzip -n > "$bundle/LocalBuild/BASSBOXX-source.tar.gz"
-cp 'packaging/Build BASSBOXX on this Mac.command' "$bundle/"
-chmod +x "$bundle/Build BASSBOXX on this Mac.command"
+git archive --format=tar HEAD CMakeLists.txt Source tests Presets | gzip -n > "$bundle/LocalBuild/TheFunkBoxx-source.tar.gz"
+cp 'packaging/Build TheFunkBoxx on this Mac.command' "$bundle/"
+chmod +x "$bundle/Build TheFunkBoxx on this Mac.command"
 (
  cd "$bundle"
- shasum -a 256 LocalBuild/* 'Build BASSBOXX on this Mac.command' \
-  'Install BASSBOXX.command' Installation.txt Build-info.txt Source.txt JUCE-LICENSE.md > Payload-SHA256.txt
+ shasum -a 256 LocalBuild/* 'Build TheFunkBoxx on this Mac.command' \
+  'Install TheFunkBoxx.command' Installation.txt Build-info.txt Source.txt JUCE-LICENSE.md > Payload-SHA256.txt
 )

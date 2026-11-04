@@ -6,7 +6,7 @@
 // No standalone-specific changes are made to synthesis, presets or parameter IDs.
 class BassboxxStandaloneApp final : public juce::JUCEApplication {
 public:
-  const juce::String getApplicationName() override { return "BASSBOXX"; }
+  const juce::String getApplicationName() override { return "TheFunkBoxx"; }
   const juce::String getApplicationVersion() override { return JucePlugin_VersionString; }
   bool moreThanOneInstanceAllowed() override { return false; }
   void anotherInstanceStarted(const juce::String&) override {
@@ -56,7 +56,7 @@ private:
     auto* editor = processor->getActiveEditor();
     if (!window->isShowing() || window->getPeer() == nullptr || !editor ||
         editor->getWidth() != 1100 || editor->getHeight() != 800 ||
-        processor->getNumPrograms() != 100 || processor->getTotalNumInputChannels() != 0) {
+        processor->getNumPrograms() != bassboxx::programCount || processor->getTotalNumInputChannels() != 0) {
       std::cerr << "FAIL: standalone window, original editor, presets or output-only setup\n";
       return false;
     }
@@ -88,7 +88,7 @@ private:
     result->setProperty("audioEnergy", energy);
     result->setProperty("windowVisible", window->isShowing());
     if (!report.replaceWithText(juce::JSON::toString(juce::var(result.get())))) return false;
-    std::cout << "PASS: standalone application window, original editor, 100 presets and MIDI stereo audio\n";
+    std::cout << "PASS: standalone application window, original editor, 125 presets and MIDI stereo audio\n";
     return true;
   }
   juce::ApplicationProperties properties;
