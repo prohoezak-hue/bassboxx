@@ -1,4 +1,313 @@
-# BASSBOXX macOS VST3 validation
+# BASSBOXX macOS standalone and VST3 validation
+
+## Developer ID native installer app
+
+**Completed signed release:** [BASSBOXX-macOS-Installer.dmg](https://github.com/prohoezak-hue/bassboxx/releases/download/developer-id-09399faec62b/BASSBOXX-macOS-Installer.dmg).
+Installer source `09399faec62b0b26be62b4b7c43266419d042e6e` passed
+[run 41797870831](https://github.com/prohoezak-hue/bassboxx/actions/runs/41797870831)
+(2 minutes 32 seconds overall; focused signing/installer job 2 minutes 14 seconds).
+The workflow verified the prior successful full Mac validation in run 41793829620
+and unchanged instrument sources/test/packaging paths before reusing instrument
+binaries from `85c360b225ca51e0774b377995ad4c6947fa6cab`. The installer was rebuilt,
+its native window/fixture/transaction tests passed, and real signed-product
+installation with the production signature verifier passed, including unsigned
+payload refusal. The engine suite passed again. No instrument regression check
+was weakened; the manifest identifies both source commits.
+
+Apple accepted app submission `f697b3dd-43f1-4707-8117-b5bcdb45e7a9` and DMG
+submission `47419363-523b-458d-9437-83ca20253020`. Both tickets were stapled and
+validated. Gatekeeper execute assessment of the app and primary-signature open
+assessment of the DMG passed before publication. The payload uses Developer ID
+Application signatures for team `5QF6Q5ATG5`, hardened runtime and trusted timestamp.
+The published DMG and manifest were independently downloaded: SHA-256 matched
+`cd990c849aa678d9ac9956c03c91967b8b81b10d632d42f631e2025300aa37ba`
+(17,573,575 bytes). The UDIF trailer, exact source bindings, team, Accepted
+notarization records and distribution type passed inspection. Live installer use
+on the user's Mac and MPC scan/playback/project recall remain local checks.
+
+The paragraphs below record the implementation and resolved failures leading to
+this accepted build; they are not current signing blockers.
+
+The Application identity imported successfully in the manual signing run; the
+next Installer identity import failed with unknown format. To remove the need
+for further user credential work, distribution now uses only the already working
+Application identity and existing Apple notarization credentials. Installer
+secrets are not read. This builds a universal native installer app/disk image,
+not a Developer ID Installer-signed package.
+
+A native AppKit UI installs user AU/VST3 bundles, validates Developer ID team
+signatures, backs up previous copies, stages before replacing, and rolls back
+partially committed upgrades. The standalone and macOS security/quarantine
+settings are unchanged. Production has no test-mode signature bypass. Native
+Mac tests exercise the window and transaction/identity failure cases; the signing
+job also tests real signed payload installation with the production verifier.
+
+After existing product validation, Developer ID signing uses a temporary keychain
+and verified G2 intermediate. Both the app and DMG require Accepted notarization,
+stapled/validated tickets and actual Gatekeeper assessments before publication.
+Authorized manual runs and trusted branch pushes explicitly marked [notarize]
+can trigger signing; PRs cannot. Public annotations identify failure phases
+without secret values. Actual signed/notarized results are recorded after an
+accepted run; prior development-product results below remain separately scoped.
+
+The first automatic application-only run (`85c360b`, run 41793829620) passed
+all Mac/native installer fixture/window tests and synth validators. Application
+identity import, Apple credential validation and real plugin signing succeeded.
+The production-verifier installation test then failed before submission. Staging
+now retains the recognized .component/.vst3 extension; test failures report their
+actual message rather than terminating through Swift's uncaught-error trap.
+An explicit [installer-only] repair route verifies the prior successful Mac job
+and exact unchanged instrument source/test/packaging paths before promoting those
+artifacts. It rebuilds and tests the changed installer, repeats the engine suite,
+and repeats real signed-product installation before any notarization/publication.
+The manifest separately identifies instrument and installer source commits.
+The focused real-signature test then reported that codesign interpreted the
+requirement expression as a filename. The production verifier now uses codesign's
+required `=` prefix for an inline requirement. This preserves the Apple anchor
+and team checks; it does not relax signature verification.
+
+## 1.2.0 Audio Unit loading route
+
+The MPC screenshot showed Ignore/Skipped for both installed BASSBOXX VST3 paths,
+other visible VST3s ignored, and zero failed plugins. Use Audio Units was enabled.
+The screenshot alone does not prove the specific filtering/format-support cause.
+Add a native AU MusicDevice (aumu/BsBx/PhZk) using the unchanged shared processor
+and editor. The standalone and VST3 remain available. No security settings or
+quarantine metadata are changed. The AU installer backs up/replaces only the AU
+component in the user's Components directory.
+
+Mac checks now require universal AU compilation, signatures, extracted ZIP and
+payload integrity, installer upgrade/quarantine/tamper regressions, Apple registry
+discovery/auval, actual AU MIDI audio/state/editor hosting, and pluginval. Registry
+and host checks also exercise the AU freshly compiled from quarantined source.
+AU validations run after installation; pre-install CTest does not assume a globally
+registered component. The packaged AU builder validates after installing locally.
+The full existing standalone/VST3 regressions remain enabled. MPC itself remains
+a required user-Mac test; a format edition is not a compatibility certification.
+
+The complete workflow passed for source commit
+`d6b56037c6ec7597d9a483ef6c47d17bd3287da0` in
+[CI run 41711400363](https://github.com/prohoezak-hue/bassboxx/actions/runs/41711400363)
+(23 minutes 36 seconds overall; Mac job 23 minutes 1 second). This includes
+Apple auval and actual AU host discovery/instantiation/MIDI audio/state/editor
+checks on the installed precompiled AU and the AU freshly built from the
+quarantined source payload, followed by pluginval on the registered local AU.
+The existing standalone/VST3 suites, both VST3 validators, installers and
+source-build checks passed too. No existing test was disabled. Local portable
+engine CTest passed in 4.39 seconds; workflow YAML, shell blocks and scripts
+passed syntax checks. Shared engine, processor and editor sources are unchanged.
+
+**[Download verified AU 1.2.0](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-d6b56037c6ec/BASSBOXX-macOS-AU.zip)**.
+The public archive was independently downloaded and verified. SHA-256:
+`0fb5db6f9d1c77183452e0e737ebfc83f9e05a1bdcd7c79321b058d78e16cad6`.
+ZIP CRCs, payload hashes, executable helpers, AudioComponents identity/factory,
+version 1.2.0, both arm64/x86_64 bundle slices and signature resources passed
+inspection. Packaged source matches the tested commit exactly. The runner used
+its native architecture; Intel runtime, Finder helper launch, real audio/MIDI and
+MPC's actual AU scan, playback and project recall remain user-Mac checks.
+
+## 1.1.1 reference skin and preset arrows
+
+The editor now uses a cached dark wood face, orange-brown wood cheeks, brass
+borders and knob rims, warm ivory keys and lettering, an amber power lamp and
+colourful ProHoeZak wordmark styled after the supplied reference. All controls
+remain live JUCE components. The original DSP, factory patch definitions,
+parameter IDs, patch save/load and performance wheels are unchanged.
+
+Stacked up/down buttons immediately before the sound dropdown load previous/next
+factory sounds, wrapping at the ends. Holding a button repeats. Both buttons
+read the processor's current program, so browsing continues from dropdown,
+host and restored-state selections. The dropdown and voice mode refresh together.
+Processor tests cover every factory sound, boundary wrapping, direct dropdown
+selection, complete parameter loading, host/state changes and visible placement.
+The full Mac/portable workflow passed for source commit
+`25145632ff6d803a2221aca53688b98c86b89d9b` in
+[CI run 41701917930](https://github.com/prohoezak-hue/bassboxx/actions/runs/41701917930)
+(24 minutes 41 seconds overall, including the queue; Mac job 19 minutes 22 seconds).
+All project suites, repeated standalone/VST3 launch checks, Steinberg Validator,
+pluginval, installer/security regressions and the packaged local build route
+passed. The real Mac editor snapshot was inspected for legibility and clipping.
+Local Linux engine and native processor/editor CTest suites also passed (2/2,
+4.18 seconds), including every factory sound and all new browsing behavior.
+
+**[Download standalone 1.1.1](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-25145632ff6d/BASSBOXX-macOS-Standalone.zip)**
+([actual Mac panel preview](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-25145632ff6d/BASSBOXX-interface.png)).
+The public ZIP was independently downloaded and verified. SHA-256:
+`be5408fb11e84cd680c8a5aad524204b8437c983a4af6e29b58fcc1c13c847c8`.
+ZIP CRCs, payload checksums, executable launchers, version/bundle identity,
+arm64/x86_64 executable slices and signature resources passed inspection.
+Packaged source matches the tested commit byte for byte. Engine, factory
+patch definitions and processor source are unchanged from verified 1.1.0.
+The runner executed its native architecture; physical audio/MIDI on the user's
+Mac and MPC 3.10 remain local checks. macOS security protections remain intact.
+
+## 1.1.0 vintage skin, voice mode and wheels
+
+This update adds the requested Model D-inspired panel, a Poly/Mono button tied to
+existing Voices, last-note mono/legato with held-key return, and onscreen pitch
+and modulation wheels. The pitch wheel returns to centre; modulation holds its
+position and adds 5 Hz vibrato with a maximum ±0.5-semitone depth. Hardware CC1 and
+pitch bend are handled at MIDI event sample positions, per channel. UI wheel
+requests use atomics and are applied to all channels on the next audio block.
+The wheels are transient controls; existing patch/parameter IDs remain unchanged.
+
+Local engine checks cover mono note priority/return, release, sustain, panic,
+poly/mono transitions, per-channel modulation, finite audio and vibrato depth.
+A separate before/after audio comparison against the previous engine rendered all
+100 presets at 44.1/48/96 kHz with wheels at rest: maximum sample difference was 0
+for single notes and the tested polyphonic sequences. Mono overlapping-note
+behavior is intentionally improved rather than compared with the old behavior.
+
+Processor/editor tests now drive the actual mode button and wheels, compare the
+rendered wheel-controlled audio with equivalent hardware MIDI, check spring-back,
+held modulation, patch mode recall, visible bounds and all 21 original knobs.
+The existing standalone app, VST3 host/scan, external validator, quarantine and
+local-build/installer checks remain required for the new release. The new skin
+snapshot is rendered by the real editor and published with the release.
+
+The full Mac and portable workflow passed for source commit
+`dc58fe446ee7624cb295ed6363bce6995d3ae339` in
+[CI run 41690506224](https://github.com/prohoezak-hue/bassboxx/actions/runs/41690506224)
+(26 minutes 32 seconds overall; Mac job 24 minutes 59 seconds). This includes
+all project tests, repeated standalone/VST3 launch checks, both external
+validators, installer/security regressions and the packaged local build route.
+No tests were disabled. The real editor screenshot was visually inspected for
+legibility, control placement and clipping.
+
+**[Download updated standalone 1.1.0](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-dc58fe446ee7/BASSBOXX-macOS-Standalone.zip)**
+([actual panel preview](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-dc58fe446ee7/BASSBOXX-interface.png)).
+The published ZIP was independently downloaded and verified. SHA-256:
+`8a68368c3457064434ea3f1ac098bacbf4fabcd16e9c907e0da60bb4f05c4683`.
+ZIP CRCs, payload hashes, executable launchers, version/bundle identity,
+arm64/x86_64 executable slices and signature resources passed inspection.
+Packaged instrument/test source matches the tested commit byte for byte.
+Physical MIDI hardware, live audio on the user's Mac and MPC 3.10 remain local
+checks; no MPC compatibility claim is made. macOS protections remain intact.
+
+## Standalone application
+
+The new standalone target adds `BASSBOXX.app` alongside the VST3 at the user's
+request. The earlier VST3-only restriction is superseded. Both formats use the
+same original processor, editor and engine; the new application host supplies
+JUCE's audio/MIDI device settings and normal-quit state persistence.
+
+New checks launch the actual app event loop/window, verify the original editor,
+100 programs and non-silent finite stereo MIDI audio, and require a fresh JSON
+report. Packaging checks both universal slices, signatures, app install/upgrade,
+quarantine/tamper rejection, and startup after ZIP extraction. The source helper
+is exercised from a quarantined app payload and launches the locally installed
+app in self-test mode. These checks passed for source commit
+`87603214259b38da9bd1cdca274b1c4c0dcf3212` in
+[CI run 41607310512](https://github.com/prohoezak-hue/bassboxx/actions/runs/41607310512),
+including publication (22 minutes 23 seconds overall; Mac job 20 minutes 29 seconds).
+The five project tests, repeated standalone/VST3 scans and loads, both external
+VST3 validators, both product installers, extracted app startup, and the packaged
+local app build/install route completed successfully. No tests were disabled.
+
+**[Download BASSBOXX-macOS-Standalone.zip](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-87603214259b/BASSBOXX-macOS-Standalone.zip)**
+([release](https://github.com/prohoezak-hue/bassboxx/releases/tag/macos-87603214259b)).
+The published ZIP was downloaded independently and matched its published SHA-256:
+`39a5afa4743635288b3e4333306138cc3a47cb1847231a132365ba8ca9346cdf`.
+ZIP CRCs, payload hashes, launcher permissions, APPL bundle identity, signature
+resources and both arm64/x86_64 Mach-O executable slices passed inspection. The
+original engine, editor and processor source remained byte-for-byte unchanged.
+The unused nib is absent from the app. The older results below refer to the
+VST3-only commits unless stated otherwise.
+
+A focused Mac probe confirmed that JUCE's optional precompiled
+`RecentFilesMenuTemplate.nib` inherited quarantine when copied from the downloaded
+JUCE archive into the app. BASSBOXX does not use a native Recent Files menu;
+its original patch save/load controls are independent. The standalone target now
+omits that unused resource. No quarantine attribute is removed from any source,
+download or binary. The helper also checks the app before executing local tests.
+The full quarantined-payload build/install regression passed after that fix; the source archive retains its quarantine metadata.
+
+A standalone format does not confer Apple notarization. Downloads remain ad-hoc
+signed development builds. The app runs without MPC; physical audio output,
+hardware MIDI and local Apple policy still require testing on the user's Mac.
+
+## Security rejection and local development installation
+
+The user's Mac reported quarantine present, `spctl: rejected`, and an intact
+codesign signature. The distributed plugin is ad-hoc signed, not Developer ID
+signed/notarized. These observations are consistent; signature integrity is not
+distribution approval. No paid Apple membership or signing credentials are
+available, and no change to quarantine or security policy is authorized.
+
+The installer now stops before replacement when a quarantined bundle is rejected,
+rather than reporting a successful installation from an integrity check alone.
+The ZIP includes a local-build helper, exact-commit original source, pinned JUCE
+8.0.6 source and an official CMake 3.31.10 disk image. All payload checksums are
+checked. CMake itself must pass codesign verification and Apple's assessment.
+The helper uses free Apple Command Line Tools, compiles a new universal VST3,
+runs four project tests, signs only newly compiled output, refuses quarantined
+local output, installs with backup, and checks actual installed VST3 loading.
+A local development build does not turn `spctl` rejection into distribution
+approval and does not override managed policy. Finder launch of the helper and
+MPC loading on the user's Mac remain separate, required local checks.
+
+New CI coverage includes metadata-only scanning, repeated scan/load cycles,
+phase timing and 30-second host deadlines, installer first-install/upgrade,
+root/nested quarantine rejection with previous-install preservation, signature
+tamper rejection, ZIP payload verification, a full build from a simulated
+quarantined extracted payload, and both external validators on the locally
+built/installed VST3. These checks passed for repair commit
+`f7b6961d6e0573a7067963391ac7cff43a63fc01` in
+[CI run 41592649183](https://github.com/prohoezak-hue/bassboxx/actions/runs/41592649183)
+(20 minutes 35 seconds overall; Mac job 20 minutes 12 seconds). The run completed
+successfully, including publication. No project test or validator was disabled.
+The Mac runner executed its native architecture; both universal slices were
+compiled/verified, but Intel runtime/MPC testing remains separate.
+
+**[Download the new local-development ZIP](https://github.com/prohoezak-hue/bassboxx/releases/download/macos-f7b6961d6e05/BASSBOXX-macOS-VST3.zip)**
+([release notes](https://github.com/prohoezak-hue/bassboxx/releases/tag/macos-f7b6961d6e05)).
+The published ZIP was independently downloaded and checked against its published
+SHA-256: `beb60e9357f8626eede09f2275ce92e792532394b66ee2bb6f990d348e59f19e`.
+ZIP CRCs, every payload checksum, executable launcher permissions, bundle identity,
+signature resources and both 64-bit Mach-O slices passed inspection. The included
+instrument source matched this commit byte for byte. The original `Source/` files
+are unchanged from the previous repair baseline.
+
+For installation, follow `packaging/Installation.txt` or the same file inside the
+ZIP. Use **Build BASSBOXX on this Mac.command** for the free local-development
+route. The precompiled plugin remains ad-hoc signed and can still be rejected;
+no Apple distribution approval or MPC compatibility is claimed. A user's Finder
+launch, actual Mac policy and MPC 3.10 scan/playback remain unverified. The
+historical results below apply only to their stated source commits.
+
+## MPC 3.10 scan timeout investigation
+
+MPC 3.10 has been reported to time out while scanning BASSBOXX. The previous
+offline test results below do not establish compatibility with that host.
+The repair branch adds the official Steinberg VST3 Validator (SDK 3.7.14 build
+55) and pluginval 1.0.4 at strictness level 5, with editor tests enabled, to the
+macOS workflow. Both tools are built from pinned source commits and their
+pinned submodules. They validate the actual universal VST3 bundle using the
+runner's native architecture; this alone does not test both architecture slices.
+
+The validator processes have 180-second and 600-second wall-clock limits,
+respectively. pluginval also retains its 30-second inactivity timeout. A timeout,
+crash or nonzero exit fails the job. Both validators are attempted independently
+after successful builds, even if a preceding test fails. Their output and CTest
+results are retained in the test-evidence artifact on failure. The Mac ZIP is
+packaged and uploaded only after all checks pass; repair-branch builds do not
+publish a release or replace the existing download.
+
+Repair commit `3c421ee` passed the [macOS validation and packaging run](https://github.com/prohoezak-hue/bassboxx/actions/runs/41586405381).
+The workflow completed successfully in 10 minutes 25 seconds, including both
+external validators, the existing engine/processor/real-VST3-host tests, editor
+rendering, universal architecture and signature verification, and installer/ZIP
+checks. The run produced the `BASSBOXX-macOS-VST3` artifact (7.2 MB), containing
+the new ZIP and its checksum. Download it from that run's Artifacts section while
+signed in to GitHub. This repair-branch artifact does not replace the public
+release linked below.
+
+Local verification also passed: portable engine CTest (1/1), validator runner
+success/failure/timeout/missing-executable/signal behavior, and the pinned
+Steinberg validator's 43 internal self-tests. No validator failure or timeout
+was reproduced. No DSP, presets, interface, or plugin features were changed by
+this CI integration. The reported MPC 3.10 scan timeout remains unconfirmed and
+unfixed; an actual MPC rescan is still required before claiming compatibility.
 
 ## Finished download
 
@@ -31,4 +340,4 @@ Actual MPC desktop scanning, MIDI hardware, live audio, automation, custom patch
 
 The plugin is ad-hoc signed, not Apple Developer ID signed/notarized. macOS or managed security policy may block downloaded development plugins and require a Developer ID signed/notarized release. No Apple signing credentials or commercial JUCE license are supplied.
 
-External pluginval/VST3-host validation and other DAWs were not tested. These results demonstrate offline synthesis and build/package readiness; they do not certify MPC compatibility.
+The repair branch subsequently added pluginval, Steinberg validator and real VST3 host checks (see results above). Other DAWs and MPC were not tested. These results demonstrate offline synthesis and build/package readiness; they do not certify MPC compatibility.

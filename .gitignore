@@ -3,3 +3,9 @@
 *.bassboxx
 
 /dist/
+
+# Apple signing credentials belong in Keychain/GitHub Actions secrets.
+*.p12
+*.pfx
+*.p8
+*.privatekey
