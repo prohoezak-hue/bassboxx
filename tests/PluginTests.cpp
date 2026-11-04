@@ -87,7 +87,9 @@ int main(int argc, char **argv) {
     p.setCurrentProgram((current + 1) % 125);
     p.setStateInformation(legacy.getData(), int(legacy.getSize()));
     check(p.getCurrentProgram() == current, "legacy project restores the same named program");
-    check(p.state.getRawParameterValue("cutoff")->load() == expectedCutoff,
+    // APVTS normalises/restores floats; allow its normal rounding precision.
+    check(std::abs(p.state.getRawParameterValue("cutoff")->load() - expectedCutoff)
+              <= std::max(1e-5f, std::abs(expectedCutoff) * 1e-6f),
           "legacy project restores its saved sound parameters");
     p.getStateInformation(saved);
     p.setCurrentProgram((current + 1) % 125);
