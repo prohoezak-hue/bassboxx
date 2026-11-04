@@ -29,9 +29,20 @@ else
 fi
 codesign --verify --deep --strict "$staged_plugin"
 # Disable bundle relocation so Installer uses the specified system VST3 folder.
-pkgbuild --analyze --root "$root" "$stage/components.plist"
-/usr/libexec/PlistBuddy -c 'Set :0:BundleIsRelocatable false' "$stage/components.plist"
-/usr/libexec/PlistBuddy -c 'Set :0:BundleOverwriteAction upgrade' "$stage/components.plist"
+# VST3 bundles may not be discovered by pkgbuild --analyze. Describe this
+# component explicitly rather than assuming an inferred entry exists.
+python3 - "$stage/components.plist" "$install_path/The Funk Box.vst3" <<'PYPLIST'
+import plistlib, sys
+component = {
+    "RootRelativeBundlePath": sys.argv[2],
+    "BundleIsRelocatable": False,
+    "BundleHasStrictIdentifier": True,
+    "BundleIsVersionChecked": True,
+    "BundleOverwriteAction": "upgrade",
+}
+with open(sys.argv[1], "wb") as output:
+    plistlib.dump([component], output)
+PYPLIST
 pkgbuild --root "$root" --component-plist "$stage/components.plist" \
  --identifier com.prohoezak.bassboxx.installer --version "$version" \
  --install-location / --ownership recommended "$stage/component.pkg"
