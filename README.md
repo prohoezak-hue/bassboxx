@@ -8,7 +8,7 @@ TheFunkBoxx 1.3.1 is a macOS standalone synthesizer, Audio Unit and VST3 instrum
 
 All three formats share 125 built-in sounds: 25 original ProHoeZak patches first (slots 1–25, Rap through Zapp), followed by the original 100 factory programs (slots 26–125). The dropdown and up/down arrows browse the complete bank. The original `.bassboxx` files are included under `Presets/ProHoeZak` and in each product ZIP. Their names and sound parameters are preserved. Fresh instances open on Rap. Existing saved states keep their sound settings and migrate to the corresponding new program positions.
 
-Three oscillators, mixer, resonant low-pass filter, separate amplitude/filter ADSR contours, Bass Boost, output, glide, 1–16 voices, Mono/Poly with last-note legato, pitch bend, modulation, sustain, MIDI keyboard, Panic, automation, project-state recall and patch save/load remain available. Original parameter IDs, patch format and factory program indices are retained. The standalone continues to use existing BASSBOXX settings.
+Three oscillators, mixer, resonant low-pass filter, separate amplitude/filter ADSR contours, Bass Boost, output, glide, 1–16 voices, Mono/Poly with last-note legato, pitch bend, modulation, sustain, MIDI keyboard, Panic, automation, project-state recall and patch save/load remain available. Original parameter IDs and patch format are retained; saved program indices migrate to the new signature-first order. The standalone continues to use existing BASSBOXX settings.
 
 ## Install and test on your Mac
 
