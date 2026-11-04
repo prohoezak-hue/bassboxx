@@ -1,31 +1,28 @@
 # BASSBOXX macOS standalone and VST3 validation
 
-## Developer ID distribution preparation
+## Developer ID native installer app
 
-A manually dispatched job is prepared for team `5QF6Q5ATG5`, after the existing
-Mac and portable validation. It requires Developer ID Application and Developer
-ID Installer private-key identities plus Apple notarization credentials in
-repository secrets. The two encrypted identities are imported separately, with
-independent passwords; Apple's G2 intermediate is verified against system trust
-and imported without trust overrides. It checks identity/team, signs both plugin slices with
-hardened runtime and trusted timestamp, builds/signs a native plugin package,
-requires an Accepted notary result, staples/validates the package, and requires
-Gatekeeper installer assessment before publishing a distinct Developer ID release.
-Its temporary keychain and decoded credentials are removed on exit; no credentials
-are put in release artifacts. The native installer verifies the new signed
-plugins before preserving/removing per-user duplicates and does not alter the
-standalone or macOS security policy. Home-folder changes run as that user.
+The Application identity imported successfully in the manual signing run; the
+next Installer identity import failed with unknown format. To remove the need
+for further user credential work, distribution now uses only the already working
+Application identity and existing Apple notarization credentials. Installer
+secrets are not read. This builds a universal native installer app/disk image,
+not a Developer ID Installer-signed package.
 
-This is prepared infrastructure, not a completed notarization: no private-key
-identities or notarization credentials have been configured in this session, so
-actual signing, Apple submission and native installer runtime checks remain
-blocked on secure account setup. Syntax/preflight results are recorded with the
-setup commit; existing development-product validations below are unchanged.
-Preparation checks passed: workflow YAML and all 17 shell blocks, both script
-syntax checks, team-specific identity selection (valid/wrong/missing/ambiguous),
-missing-credential failure before output creation, and rejection of non-Accepted
-notarization status. These fixture/preflight checks are not macOS signing or
-installer runtime verification.
+A native AppKit UI installs user AU/VST3 bundles, validates Developer ID team
+signatures, backs up previous copies, stages before replacing, and rolls back
+partially committed upgrades. The standalone and macOS security/quarantine
+settings are unchanged. Production has no test-mode signature bypass. Native
+Mac tests exercise the window and transaction/identity failure cases; the signing
+job also tests real signed payload installation with the production verifier.
+
+After existing product validation, Developer ID signing uses a temporary keychain
+and verified G2 intermediate. Both the app and DMG require Accepted notarization,
+stapled/validated tickets and actual Gatekeeper assessments before publication.
+Authorized manual runs and trusted branch pushes explicitly marked [notarize]
+can trigger signing; PRs cannot. Public annotations identify failure phases
+without secret values. Actual signed/notarized results are recorded after an
+accepted run; prior development-product results below remain separately scoped.
 
 ## 1.2.0 Audio Unit loading route
 

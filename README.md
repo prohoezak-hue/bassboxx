@@ -14,15 +14,18 @@ The app retains the original synthesizer, 100 presets and patch-file controls, w
 
 The separate **BASSBOXX-macOS-VST3.zip** is still available for music hosts. [Build status](https://github.com/prohoezak-hue/bassboxx/actions/workflows/build.yml) · [Validation](VALIDATION.md)
 
-## Developer ID / notarized installer setup
+## Signed installer without certificate setup on the receiving Mac
 
-Team **5QF6Q5ATG5** is configured for a manual signed-distribution workflow.
-Follow the [one-time Apple signing setup](docs/Apple-Signing-Setup.md) to create
-both Developer ID identities and store credentials in GitHub Actions secrets.
-No signed/notarized download is claimed until an actual submission is accepted,
-stapled and passes the installer assessment. Development ZIPs below remain
-ad-hoc signed. The new native installer will contain AU/VST3 and preserve the
-working standalone. MPC compatibility still requires local verification.
+The distribution workflow now uses the existing **Developer ID Application**
+identity to build a native **Install BASSBOXX.app** inside a notarized disk image.
+It does not require the Installer certificate or either Installer secret. The
+owner's Application identity and Apple notarization credentials remain in GitHub
+Actions secrets; receiving Macs do not need certificates, a build helper or local
+compilation. Open the finished DMG, open Install BASSBOXX.app and click Install.
+The app installs user AU/VST3 copies with backup/rollback and preserves the working
+standalone. No signed/notarized download is claimed until Apple accepts both the
+app and disk image and their stapled tickets/Gatekeeper assessments pass.
+MPC scanning/playback still requires verification on the user's Mac.
 
 ## MPC Ignore/Skipped and the Audio Unit edition (1.2.0)
 

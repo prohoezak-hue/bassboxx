@@ -18,23 +18,27 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Check manual distribution setup before building
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[notarize]'))
         env:
           HAVE_APPLICATION: ${{ secrets.MAC_APPLICATION_P12_BASE64 != '' }}
           HAVE_APPLICATION_PASSWORD: ${{ secrets.MAC_APPLICATION_P12_PASSWORD != '' }}
-          HAVE_INSTALLER: ${{ secrets.MAC_INSTALLER_P12_BASE64 != '' }}
-          HAVE_INSTALLER_PASSWORD: ${{ secrets.MAC_INSTALLER_P12_PASSWORD != '' }}
           HAVE_APPLE_ID: ${{ secrets.APPLE_ID != '' }}
           HAVE_NOTARY_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
         run: |
           set -euo pipefail
-          for setting in HAVE_APPLICATION HAVE_APPLICATION_PASSWORD HAVE_INSTALLER HAVE_INSTALLER_PASSWORD HAVE_APPLE_ID HAVE_NOTARY_PASSWORD; do
+          for setting in HAVE_APPLICATION HAVE_APPLICATION_PASSWORD HAVE_APPLE_ID HAVE_NOTARY_PASSWORD; do
             if [[ "${!setting}" != true ]]; then
               echo "::error::Missing Developer ID configuration ($setting). Follow docs/Apple-Signing-Setup.md before running a manual distribution."
               exit 1
             fi
           done
       - uses: actions/checkout@v4
+      - name: Build and test native installer app
+        run: |
+          python3 scripts/run-validator.py 180 build/validator-logs/native-installer.log bash scripts/build-native-installer.sh build/native-installer
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent 'build/native-installer/Install BASSBOXX.app' dist/BASSBOXX-native-installer-build.zip
+          (cd dist && shasum -a 256 BASSBOXX-native-installer-build.zip > BASSBOXX-native-installer-build.zip.sha256)
       - uses: actions/checkout@v4
         with:
           repository: steinbergmedia/vst3sdk
@@ -118,6 +122,8 @@ jobs:
             dist/BASSBOXX-macOS-Standalone.zip
             dist/BASSBOXX-macOS-Standalone.zip.sha256
             dist/BASSBOXX-interface.png
+            dist/BASSBOXX-native-installer-build.zip
+            dist/BASSBOXX-native-installer-build.zip.sha256
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -127,6 +133,7 @@ jobs:
           path: |
             build/Testing/Temporary/LastTest.log
             build/validator-logs/
+            build/native-installer/smoke.json
             build/standalone-report.json
             build/standalone-extracted-report.json
             build/local-build-test-run.*/**/Build.log
@@ -186,11 +193,11 @@ jobs:
           fi
           echo "Download: https://github.com/${GH_REPO}/releases/download/${tag}/BASSBOXX-macOS-Standalone.zip" >> "$GITHUB_STEP_SUMMARY"
   developer_id:
-    name: Sign and notarize native Mac installer
+    name: Sign and notarize Mac installer app
     needs: [mac, engine]
-    if: github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation')
+    if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[notarize]'))) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/vst3-host-load-validation')
     runs-on: macos-14
-    timeout-minutes: 50
+    timeout-minutes: 90
     permissions:
       contents: write
     steps:
@@ -203,8 +210,6 @@ jobs:
         env:
           MAC_APPLICATION_P12_BASE64: ${{ secrets.MAC_APPLICATION_P12_BASE64 }}
           MAC_APPLICATION_P12_PASSWORD: ${{ secrets.MAC_APPLICATION_P12_PASSWORD }}
-          MAC_INSTALLER_P12_BASE64: ${{ secrets.MAC_INSTALLER_P12_BASE64 }}
-          MAC_INSTALLER_P12_PASSWORD: ${{ secrets.MAC_INSTALLER_P12_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         run: bash scripts/package-developer-id.sh validated-artifacts signed-dist
@@ -215,7 +220,7 @@ jobs:
           name: BASSBOXX-Developer-ID-evidence
           path: |
             signed-dist/notarization*.json
-            signed-dist/package-signature.txt
+            build/native-installer/smoke.json
             signed-dist/Build-info.json
           if-no-files-found: ignore
       - name: Publish accepted and stapled installer
@@ -228,14 +233,14 @@ jobs:
           cat > signed-release-notes.md <<'NOTES'
           BASSBOXX AU and VST3 for macOS 11+, Apple Silicon and Intel.
 
-          Download BASSBOXX-macOS-Plugins.pkg, quit MPC and open it using Apple's Installer. Administrator authorization installs the plugins in /Library/Audio/Plug-Ins/Components and /Library/Audio/Plug-Ins/VST3. After signature verification, older per-user BASSBOXX plugin duplicates are backed up in your home Library/Application Support/BASSBOXX/Backups folder. The standalone app is not replaced. No command-file helper or local compilation is required.
+          Download BASSBOXX-macOS-Installer.dmg, open it, then open Install BASSBOXX.app and click Install. Quit MPC first. The app installs AU/VST3 into your user Library/Audio/Plug-Ins folders and backs up previous copies. The standalone app is not changed. No private-key setup, command-file helper, administrator password or local compilation is required on the receiving Mac.
 
-          Plugins are Developer ID Application signed for team 5QF6Q5ATG5. The package is Developer ID Installer signed, accepted by Apple's notarization service, stapled and verified by Gatekeeper's installer assessment. The same workflow first passed the existing engine, processor, standalone, AU/VST3 hosting, Apple auval, Steinberg Validator, pluginval and development-installer regressions.
+          The installer app, plugins and disk image are Developer ID Application signed for team 5QF6Q5ATG5. Apple accepted the app and disk image for notarization; their tickets are stapled and Gatekeeper assessments passed. Native installer tests cover first install, upgrade backups, signature rejection, rollback after a partial installation and preservation of unrelated files. The existing engine, processor, standalone, AU/VST3 hosting, Apple auval, Steinberg Validator and pluginval regressions passed first.
 
-          Restart MPC, keep Use Audio Units checked and choose Rescan All. Look for BASSBOXX as an AU instrument. MPC scanning, playback and project recall still require verification on your Mac; notarization does not certify MPC compatibility.
+          Restart MPC, keep Use Audio Units checked and choose Rescan All. Select BASSBOXX as an AU instrument. MPC scanning, playback and project recall still require verification on your Mac; notarization is not MPC certification.
           NOTES
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" signed-dist/BASSBOXX-macOS-Plugins.pkg signed-dist/BASSBOXX-macOS-Plugins.pkg.sha256 signed-dist/Build-info.json --clobber
+            gh release upload "$tag" signed-dist/BASSBOXX-macOS-Installer.dmg signed-dist/BASSBOXX-macOS-Installer.dmg.sha256 signed-dist/Build-info.json --clobber
           else
-            gh release create "$tag" signed-dist/BASSBOXX-macOS-Plugins.pkg signed-dist/BASSBOXX-macOS-Plugins.pkg.sha256 signed-dist/Build-info.json --target "$GITHUB_SHA" --title 'BASSBOXX notarized Mac plugins' --prerelease --latest=false --notes-file signed-release-notes.md
+            gh release create "$tag" signed-dist/BASSBOXX-macOS-Installer.dmg signed-dist/BASSBOXX-macOS-Installer.dmg.sha256 signed-dist/Build-info.json --target "$GITHUB_SHA" --title 'BASSBOXX notarized Mac installer' --prerelease --latest=false --notes-file signed-release-notes.md
           fi
