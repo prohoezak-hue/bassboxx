@@ -68,8 +68,27 @@ pkgbuild --root "$work/preset-root" --install-location / --identifier com.prohoe
 cleanup_mount
 out="$kit_dir/Output-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$out"
-unsigned="$out/TheFunkBoxx-1.3.1-Installer2-UNSIGNED.pkg"
-productbuild --package "$work/packages/app.pkg" --package "$work/packages/au.pkg" --package "$work/packages/vst3.pkg" --package "$work/packages/presets.pkg" "$unsigned"
+unsigned="$out/TheFunkBoxx-1.3.1-Installer3-UNSIGNED.pkg"
+# Explicitly select all four payloads in the Installer distribution.
+/usr/bin/python3 - "$work/distribution.xml" <<'PYDIST'
+import sys, xml.etree.ElementTree as ET
+root = ET.Element('installer-gui-script', minSpecVersion='2')
+ET.SubElement(root, 'title').text = 'TheFunkBoxx 1.3.1'
+ET.SubElement(root, 'options', customize='never', **{'require-scripts':'false', 'hostArchitectures':'arm64,x86_64'})
+ET.SubElement(root, 'domains', enable_localSystem='true', enable_currentUserHome='false', enable_anywhere='false')
+versions = ET.SubElement(root, 'allowed-os-versions')
+ET.SubElement(versions, 'os-version', min='11.0')
+outline = ET.SubElement(root, 'choices-outline')
+for kind, title in [('app','Standalone'),('au','Audio Unit'),('vst3','VST3'),('presets','Presets')]:
+    ident = 'com.prohoezak.thefunkboxx.pkg.' + kind
+    ET.SubElement(outline, 'line', choice=kind)
+    choice = ET.SubElement(root, 'choice', id=kind, title=title, visible='false', start_selected='true', selected='true')
+    ET.SubElement(choice, 'pkg-ref', id=ident)
+    ET.SubElement(root, 'pkg-ref', id=ident).text = kind + '.pkg'
+ET.ElementTree(root).write(sys.argv[1], encoding='utf-8', xml_declaration=True)
+PYDIST
+cp "$work/distribution.xml" "$out/Distribution.xml"
+productbuild --distribution "$work/distribution.xml" --package-path "$work/packages" "$unsigned"
 pkgutil --expand-full "$unsigned" "$work/expanded-product"
 for kind in app au vst3; do
   info="$work/expanded-product/$kind.pkg/PackageInfo"
@@ -90,7 +109,7 @@ pkgutil --payload-files "$work/packages/vst3.pkg" > "$out/VST3-payload.txt"
 pkgutil --payload-files "$work/packages/app.pkg" > "$out/Standalone-payload.txt"
 final="$unsigned"
 if [ -n "${FUNKBOXX_INSTALLER_IDENTITY:-}" ]; then
-  final="$out/TheFunkBoxx-1.3.1-Installer2-SIGNED.pkg"
+  final="$out/TheFunkBoxx-1.3.1-Installer3-SIGNED.pkg"
   productsign --sign "$FUNKBOXX_INSTALLER_IDENTITY" "$unsigned" "$final"
   pkgutil --check-signature "$final"
   if [ -n "${FUNKBOXX_NOTARY_PROFILE:-}" ]; then
