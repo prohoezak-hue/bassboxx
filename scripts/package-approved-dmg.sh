@@ -47,17 +47,13 @@ package_bundle() {
   /usr/bin/python3 - "$work/$kind-components.plist" "$relative" <<'PYPLIST'
 import plistlib, sys
 with open(sys.argv[1], 'wb') as f:
-    plistlib.dump([{
-        'RootRelativeBundlePath': sys.argv[2],
-        'BundleIsRelocatable': False,
-        'BundleHasStrictIdentifier': True,
-        'BundleIsVersionChecked': False,
-        'BundleOverwriteAction': 'upgrade',
-    }], f)
+    # Empty component metadata disables Installer bundle identification and
+    # version-based suppression. Bundle contents and signatures remain intact.
+    plistlib.dump([], f)
 PYPLIST
   pkgbuild --root "$root" --component-plist "$work/$kind-components.plist" \
     --install-location / --ownership recommended \
-    --identifier "com.prohoezak.thefunkboxx.pkg.$kind" --version 1.3.1.1 "$work/packages/$kind.pkg"
+    --identifier "com.prohoezak.thefunkboxx.pkg.$kind" --version 1.3.1.2 "$work/packages/$kind.pkg"
 }
 package_bundle "$app" Applications app
 package_bundle "$plugin_dir/TheFunkBoxx.component" Library/Audio/Plug-Ins/Components au
@@ -68,7 +64,7 @@ pkgbuild --root "$work/preset-root" --install-location / --identifier com.prohoe
 cleanup_mount
 out="$kit_dir/Output-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$out"
-unsigned="$out/TheFunkBoxx-1.3.1-Installer3-UNSIGNED.pkg"
+unsigned="$out/TheFunkBoxx-1.3.1-Installer4-UNSIGNED.pkg"
 # Explicitly select all four payloads in the Installer distribution.
 /usr/bin/python3 - "$work/distribution.xml" <<'PYDIST'
 import sys, xml.etree.ElementTree as ET
@@ -97,19 +93,22 @@ for kind in app au vst3; do
 import sys, xml.etree.ElementTree as ET
 root = ET.parse(sys.argv[1]).getroot()
 assert root.attrib['install-location'] == '/', 'Unexpected package install location'
+assert not root.findall('.//bundle'), 'File payload must not contain Installer bundle matching rules'
 # pkgbuild can emit <relocate/> even when every bundle is non-relocatable.
 # Reject populated relocation sections, rather than the empty container.
 for section in root.findall('.//relocate'):
     assert not list(section) and not section.attrib and not (section.text or '').strip(), 'Package contains active bundle relocation rules'
 PYVERIFY
  done
+codesign --verify --deep --strict "$work/expanded-product/app.pkg/Payload/Applications/TheFunkBoxx.app"
 codesign --verify --deep --strict "$work/expanded-product/au.pkg/Payload/Library/Audio/Plug-Ins/Components/TheFunkBoxx.component"
+codesign --verify --deep --strict "$work/expanded-product/vst3.pkg/Payload/Library/Audio/Plug-Ins/VST3/TheFunkBoxx.vst3"
 pkgutil --payload-files "$work/packages/au.pkg" > "$out/AU-payload.txt"
 pkgutil --payload-files "$work/packages/vst3.pkg" > "$out/VST3-payload.txt"
 pkgutil --payload-files "$work/packages/app.pkg" > "$out/Standalone-payload.txt"
 final="$unsigned"
 if [ -n "${FUNKBOXX_INSTALLER_IDENTITY:-}" ]; then
-  final="$out/TheFunkBoxx-1.3.1-Installer3-SIGNED.pkg"
+  final="$out/TheFunkBoxx-1.3.1-Installer4-SIGNED.pkg"
   productsign --sign "$FUNKBOXX_INSTALLER_IDENTITY" "$unsigned" "$final"
   pkgutil --check-signature "$final"
   if [ -n "${FUNKBOXX_NOTARY_PROFILE:-}" ]; then
