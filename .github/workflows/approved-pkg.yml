@@ -33,7 +33,7 @@ jobs:
           if [ -z "$package" ]; then package=$(find approved-input -name '*-UNSIGNED.pkg' -print -quit); fi
           test -n "$package" || { echo "::error::No package produced"; exit 1; }
           sudo installer -showChoicesXML -pkg "$package" -target / > approved-input/installer-choices.xml
-          sudo installer -pkg "$package" -target /
+          sudo installer -verboseR -dumplog -pkg "$package" -target /
           for bundle in /Applications/TheFunkBoxx.app /Library/Audio/Plug-Ins/Components/TheFunkBoxx.component /Library/Audio/Plug-Ins/VST3/TheFunkBoxx.vst3; do
             echo "Verifying installed bundle: $bundle"
             test -d "$bundle" || { echo "::error::Missing installed bundle: $bundle"; pkgutil --pkgs | grep thefunkboxx || true; exit 1; }
@@ -43,6 +43,23 @@ jobs:
           done
           sudo installer -pkg "$package" -target /
           /usr/bin/auval -v aumu FnBx PhZk
+      - name: Diagnose installed payload locations
+        if: always()
+        run: |
+          set -uo pipefail
+          for kind in app au vst3 presets; do
+            id="com.prohoezak.thefunkboxx.pkg.$kind"
+            echo "Receipt details: $id"
+            pkgutil --pkg-info "$id" || true
+            pkgutil --files "$id" | head -60 || true
+          done
+          echo 'Actual plugin directories:'
+          ls -la /Library/Audio/Plug-Ins/ /Library/Audio/Plug-Ins/VST3/ /Library/Audio/Plug-Ins/Components/ || true
+          echo 'TheFunkBoxx paths in system and user audio folders:'
+          find /Library/Audio "$HOME/Library/Audio" /Applications -iname '*funkbox*' -print 2>/dev/null || true
+          echo 'Packaged VST3 payload:'
+          find approved-input -name VST3-payload.txt -exec cat {} \;
+          sudo tail -160 /var/log/install.log > approved-input/install-diagnostics.log
       - name: Retain package and evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -51,4 +68,5 @@ jobs:
           path: |
             approved-input/Output-*/*
             approved-input/installer-choices.xml
+            approved-input/install-diagnostics.log
           if-no-files-found: error
