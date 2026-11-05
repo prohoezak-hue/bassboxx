@@ -37,25 +37,56 @@ for bundle in "$app" "$plugin_dir/TheFunkBoxx.component" "$plugin_dir/TheFunkBox
   [ "$version" = 1.3.1 ] || { echo "Unexpected bundle version: $version"; exit 1; }
   codesign --verify --deep --strict --verbose=2 "$bundle"
 done
-# Package the existing signed bundles, without modifying or re-signing them.
-pkgbuild --component "$app" --install-location /Applications --identifier com.prohoezak.thefunkboxx.pkg.app --version 1.3.1 "$work/packages/app.pkg"
-pkgbuild --component "$plugin_dir/TheFunkBoxx.component" --install-location /Library/Audio/Plug-Ins/Components --identifier com.prohoezak.thefunkboxx.pkg.au --version 1.3.1 "$work/packages/au.pkg"
-pkgbuild --component "$plugin_dir/TheFunkBoxx.vst3" --install-location /Library/Audio/Plug-Ins/VST3 --identifier com.prohoezak.thefunkboxx.pkg.vst3 --version 1.3.1 "$work/packages/vst3.pkg"
+# Explicit roots prevent Installer from relocating bundles to an existing copy.
+# AU, VST3 and standalone intentionally share a bundle identifier.
+package_bundle() {
+  local source="$1" destination="$2" kind="$3"
+  local root="$work/$kind-root" relative="$destination/$(basename "$source")"
+  mkdir -p "$root/$destination"
+  ditto "$source" "$root/$relative"
+  /usr/bin/python3 - "$work/$kind-components.plist" "$relative" <<'PYPLIST'
+import plistlib, sys
+with open(sys.argv[1], 'wb') as f:
+    plistlib.dump([{
+        'RootRelativeBundlePath': sys.argv[2],
+        'BundleIsRelocatable': False,
+        'BundleHasStrictIdentifier': True,
+        'BundleIsVersionChecked': False,
+        'BundleOverwriteAction': 'upgrade',
+    }], f)
+PYPLIST
+  pkgbuild --root "$root" --component-plist "$work/$kind-components.plist" \
+    --install-location / --ownership recommended \
+    --identifier "com.prohoezak.thefunkboxx.pkg.$kind" --version 1.3.1.1 "$work/packages/$kind.pkg"
+}
+package_bundle "$app" Applications app
+package_bundle "$plugin_dir/TheFunkBoxx.component" Library/Audio/Plug-Ins/Components au
+package_bundle "$plugin_dir/TheFunkBoxx.vst3" Library/Audio/Plug-Ins/VST3 vst3
 mkdir -p "$work/preset-root/Library/Application Support/TheFunkBoxx/Presets"
 ditto "$mount/ProHoeZak Presets" "$work/preset-root/Library/Application Support/TheFunkBoxx/Presets"
 pkgbuild --root "$work/preset-root" --install-location / --identifier com.prohoezak.thefunkboxx.pkg.presets --version 1.3.1 --ownership recommended "$work/packages/presets.pkg"
 cleanup_mount
 out="$kit_dir/Output-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$out"
-unsigned="$out/TheFunkBoxx-1.3.1-UNSIGNED.pkg"
+unsigned="$out/TheFunkBoxx-1.3.1-Installer2-UNSIGNED.pkg"
 productbuild --package "$work/packages/app.pkg" --package "$work/packages/au.pkg" --package "$work/packages/vst3.pkg" --package "$work/packages/presets.pkg" "$unsigned"
-pkgutil --expand "$unsigned" "$work/expanded-product"
+pkgutil --expand-full "$unsigned" "$work/expanded-product"
+for kind in app au vst3; do
+  info="$work/expanded-product/$kind.pkg/PackageInfo"
+  /usr/bin/python3 - "$info" <<'PYVERIFY'
+import sys, xml.etree.ElementTree as ET
+root = ET.parse(sys.argv[1]).getroot()
+assert root.attrib['install-location'] == '/', 'Unexpected package install location'
+assert not root.findall('.//relocate'), 'Package must not allow bundle relocation'
+PYVERIFY
+ done
+codesign --verify --deep --strict "$work/expanded-product/au.pkg/Payload/Library/Audio/Plug-Ins/Components/TheFunkBoxx.component"
 pkgutil --payload-files "$work/packages/au.pkg" > "$out/AU-payload.txt"
 pkgutil --payload-files "$work/packages/vst3.pkg" > "$out/VST3-payload.txt"
 pkgutil --payload-files "$work/packages/app.pkg" > "$out/Standalone-payload.txt"
 final="$unsigned"
 if [ -n "${FUNKBOXX_INSTALLER_IDENTITY:-}" ]; then
-  final="$out/TheFunkBoxx-1.3.1-SIGNED.pkg"
+  final="$out/TheFunkBoxx-1.3.1-Installer2-SIGNED.pkg"
   productsign --sign "$FUNKBOXX_INSTALLER_IDENTITY" "$unsigned" "$final"
   pkgutil --check-signature "$final"
   if [ -n "${FUNKBOXX_NOTARY_PROFILE:-}" ]; then
