@@ -73,11 +73,15 @@ productbuild --package "$work/packages/app.pkg" --package "$work/packages/au.pkg
 pkgutil --expand-full "$unsigned" "$work/expanded-product"
 for kind in app au vst3; do
   info="$work/expanded-product/$kind.pkg/PackageInfo"
+  cp "$info" "$out/$kind-PackageInfo.xml"
   /usr/bin/python3 - "$info" <<'PYVERIFY'
 import sys, xml.etree.ElementTree as ET
 root = ET.parse(sys.argv[1]).getroot()
 assert root.attrib['install-location'] == '/', 'Unexpected package install location'
-assert not root.findall('.//relocate'), 'Package must not allow bundle relocation'
+# pkgbuild can emit <relocate/> even when every bundle is non-relocatable.
+# Reject populated relocation sections, rather than the empty container.
+for section in root.findall('.//relocate'):
+    assert not list(section) and not section.attrib and not (section.text or '').strip(), 'Package contains active bundle relocation rules'
 PYVERIFY
  done
 codesign --verify --deep --strict "$work/expanded-product/au.pkg/Payload/Library/Audio/Plug-Ins/Components/TheFunkBoxx.component"
