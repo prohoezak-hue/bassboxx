@@ -1,5 +1,7 @@
 #!/bin/bash
 set -euo pipefail
+# The signing wrapper uses umask 077 for keys. Package directories must be public.
+umask 022
 cd "${FUNKBOXX_PACKAGE_INPUT:?Set approved DMG staging directory}"
 kit_dir="$PWD"
 finish() {
@@ -53,7 +55,7 @@ with open(sys.argv[1], 'wb') as f:
 PYPLIST
   pkgbuild --root "$root" --component-plist "$work/$kind-components.plist" \
     --install-location / --ownership recommended \
-    --identifier "com.prohoezak.thefunkboxx.pkg.$kind" --version 1.3.1.2 "$work/packages/$kind.pkg"
+    --identifier "com.prohoezak.thefunkboxx.pkg.$kind" --version 1.3.1.3 "$work/packages/$kind.pkg"
 }
 package_bundle "$app" Applications app
 package_bundle "$plugin_dir/TheFunkBoxx.component" Library/Audio/Plug-Ins/Components au
@@ -64,7 +66,7 @@ pkgbuild --root "$work/preset-root" --install-location / --identifier com.prohoe
 cleanup_mount
 out="$kit_dir/Output-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$out"
-unsigned="$out/TheFunkBoxx-1.3.1-Installer4-UNSIGNED.pkg"
+unsigned="$out/TheFunkBoxx-1.3.1-Installer5-UNSIGNED.pkg"
 # Explicitly select all four payloads in the Installer distribution.
 /usr/bin/python3 - "$work/distribution.xml" <<'PYDIST'
 import sys, xml.etree.ElementTree as ET
@@ -108,7 +110,7 @@ pkgutil --payload-files "$work/packages/vst3.pkg" > "$out/VST3-payload.txt"
 pkgutil --payload-files "$work/packages/app.pkg" > "$out/Standalone-payload.txt"
 final="$unsigned"
 if [ -n "${FUNKBOXX_INSTALLER_IDENTITY:-}" ]; then
-  final="$out/TheFunkBoxx-1.3.1-Installer4-SIGNED.pkg"
+  final="$out/TheFunkBoxx-1.3.1-Installer5-SIGNED.pkg"
   productsign --sign "$FUNKBOXX_INSTALLER_IDENTITY" "$unsigned" "$final"
   pkgutil --check-signature "$final"
   if [ -n "${FUNKBOXX_NOTARY_PROFILE:-}" ]; then

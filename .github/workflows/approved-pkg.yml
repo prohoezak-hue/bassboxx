@@ -36,6 +36,7 @@ jobs:
           sudo installer -verboseR -dumplog -pkg "$package" -target /
           for bundle in /Applications/TheFunkBoxx.app /Library/Audio/Plug-Ins/Components/TheFunkBoxx.component /Library/Audio/Plug-Ins/VST3/TheFunkBoxx.vst3; do
             echo "Verifying installed bundle: $bundle"
+            test -r "$bundle/Contents/Info.plist" || { echo "::error::Bundle is not readable by the ordinary runner user: $bundle"; ls -ld "$(dirname "$bundle")"; exit 1; }
             test -d "$bundle" || { echo "::error::Missing installed bundle: $bundle"; pkgutil --pkgs | grep thefunkboxx || true; exit 1; }
             codesign --verify --deep --strict "$bundle"
             test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$bundle/Contents/Info.plist")" = 1.3.1
